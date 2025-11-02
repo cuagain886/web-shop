@@ -22,6 +22,24 @@ export default [
     meta: { title: '购物车' }
   },
   {
+    path: '/checkout',
+    name: 'Checkout',
+    component: () => import('@/pages/order/Checkout.vue'),
+    meta: { title: '确认订单', requiresAuth: true }
+  },
+  {
+    path: '/orders',
+    name: 'OrderList',
+    component: () => import('@/pages/order/OrderList.vue'),
+    meta: { title: '我的订单', requiresAuth: true }
+  },
+  {
+    path: '/order/:id',
+    name: 'OrderDetail',
+    component: () => import('@/pages/order/OrderDetail.vue'),
+    meta: { title: '订单详情', requiresAuth: true }
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('@/pages/user/Login.vue'),

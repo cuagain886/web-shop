@@ -240,18 +240,18 @@ const handleCheckout = () => {
         type: 'info'
       }
     ).then(() => {
-      // 跳转到登录页，并记录来源页面
+      // 跳转到登录页，并记录来源页面（登录后返回结算页）
       router.push({
         path: '/login',
-        query: { redirect: '/cart' }
+        query: { redirect: '/checkout' }
       })
     }).catch(() => {})
     return
   }
 
-  // TODO: 跳转到订单确认页
-  ElMessage.info('即将跳转到订单确认页（功能开发中）')
+  // 跳转到订单确认页
   console.log('结算商品:', cartStore.checkedItems)
+  router.push('/checkout')
 }
 
 // 返回首页

@@ -88,7 +88,7 @@ const handleSearch = () => {
 const handleCommand = async (command) => {
   switch (command) {
     case 'orders':
-      ElMessage.info('我的订单功能开发中')
+      router.push('/orders')
       break
     case 'profile':
       ElMessage.info('个人中心功能开发中')
