@@ -91,7 +91,12 @@ const handleCommand = async (command) => {
       router.push('/orders')
       break
     case 'profile':
-      ElMessage.info('个人中心功能开发中')
+      // 根据用户角色跳转到对应的个人中心
+      if (userStore.userInfo?.role === 'merchant') {
+        router.push('/admin/profile')
+      } else {
+        router.push('/profile')
+      }
       break
     case 'logout':
       try {

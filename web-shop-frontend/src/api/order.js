@@ -6,7 +6,7 @@ import request from '@/utils/request'
 
 // ========== Mock 数据（开发阶段使用）==========
 const MOCK_ENABLED = true // 是否启用Mock数据
-const ORDER_STORAGE_KEY = 'mock_order_data' // localStorage存储key
+export const ORDER_STORAGE_KEY = 'mock_order_data' // localStorage存储key（导出供其他模块使用）
 
 // 从localStorage获取订单数据
 const getOrdersFromStorage = () => {
@@ -412,7 +412,52 @@ export function getPaymentStatus(id) {
 /**
  * 获取订单列表（管理端）
  */
-export function getAdminOrderList(params) {
+export function getAdminOrderList(params = {}) {
+  if (MOCK_ENABLED) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        let orders = getOrdersFromStorage()
+        
+        // 按状态筛选
+        if (params.status && params.status !== 'all') {
+          orders = orders.filter(order => order.status === params.status)
+        }
+        
+        // 按时间范围筛选
+        if (params.startDate) {
+          const startTime = new Date(params.startDate).getTime()
+          orders = orders.filter(order => new Date(order.createdAt).getTime() >= startTime)
+        }
+        if (params.endDate) {
+          const endTime = new Date(params.endDate).getTime() + 86400000 // 加一天
+          orders = orders.filter(order => new Date(order.createdAt).getTime() < endTime)
+        }
+        
+        // 按关键词搜索（订单号）
+        if (params.keyword) {
+          orders = orders.filter(order => order.orderNo.includes(params.keyword))
+        }
+        
+        // 分页
+        const page = params.page || 1
+        const pageSize = params.pageSize || 10
+        const total = orders.length
+        const start = (page - 1) * pageSize
+        const end = start + pageSize
+        const list = orders.slice(start, end)
+        
+        console.log('📦 获取管理端订单列表:', { total, page, pageSize, list: list.length })
+        resolve({
+          list,
+          total,
+          page,
+          pageSize,
+          totalPages: Math.ceil(total / pageSize)
+        })
+      }, 300)
+    })
+  }
+  
   return request({
     url: '/admin/orders',
     method: 'get',
@@ -421,9 +466,57 @@ export function getAdminOrderList(params) {
 }
 
 /**
+ * 获取订单详情（管理端）
+ */
+export function getAdminOrderDetail(id) {
+  if (MOCK_ENABLED) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const orders = getOrdersFromStorage()
+        const order = orders.find(o => o.id === Number(id))
+        
+        if (order) {
+          console.log('📦 获取管理端订单详情:', order)
+          resolve(order)
+        } else {
+          reject(new Error('订单不存在'))
+        }
+      }, 300)
+    })
+  }
+  
+  return request({
+    url: `/admin/orders/${id}`,
+    method: 'get'
+  })
+}
+
+/**
  * 更新订单状态（管理端）
  */
 export function updateOrderStatus(id, data) {
+  if (MOCK_ENABLED) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const orders = getOrdersFromStorage()
+        const order = orders.find(o => o.id === Number(id))
+        
+        if (!order) {
+          reject(new Error('订单不存在'))
+          return
+        }
+        
+        order.status = data.status
+        order.statusText = getStatusText(data.status)
+        order.updatedAt = new Date().toISOString()
+        
+        saveOrdersToStorage(orders)
+        console.log('📦 更新订单状态成功:', { id, status: data.status })
+        resolve(order)
+      }, 300)
+    })
+  }
+  
   return request({
     url: `/admin/orders/${id}/status`,
     method: 'put',
@@ -435,11 +528,131 @@ export function updateOrderStatus(id, data) {
  * 订单发货（管理端）
  */
 export function shipOrder(id, data) {
+  if (MOCK_ENABLED) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const orders = getOrdersFromStorage()
+        const order = orders.find(o => o.id === Number(id))
+        
+        if (!order) {
+          reject(new Error('订单不存在'))
+          return
+        }
+        
+        if (order.status !== 'paid') {
+          reject(new Error('只有已支付的订单才能发货'))
+          return
+        }
+        
+        order.status = 'shipped'
+        order.statusText = '已发货'
+        order.trackingNo = data.trackingNo || ''
+        order.shippedAt = new Date().toISOString()
+        order.updatedAt = new Date().toISOString()
+        
+        saveOrdersToStorage(orders)
+        console.log('📦 订单发货成功:', order)
+        resolve(order)
+      }, 500)
+    })
+  }
+  
   return request({
     url: `/admin/orders/${id}/ship`,
     method: 'put',
     data
   })
+}
+
+/**
+ * 商家取消订单（管理端）
+ */
+export function adminCancelOrder(id, data) {
+  if (MOCK_ENABLED) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const orders = getOrdersFromStorage()
+        const order = orders.find(o => o.id === Number(id))
+        
+        if (!order) {
+          reject(new Error('订单不存在'))
+          return
+        }
+        
+        if (order.status !== 'pending') {
+          reject(new Error('只有待支付的订单才能取消'))
+          return
+        }
+        
+        order.status = 'cancelled'
+        order.statusText = '已取消'
+        order.cancelReason = data.reason || '商家取消'
+        order.cancelledAt = new Date().toISOString()
+        order.updatedAt = new Date().toISOString()
+        
+        saveOrdersToStorage(orders)
+        console.log('📦 商家取消订单成功:', order)
+        resolve(order)
+      }, 300)
+    })
+  }
+  
+  return request({
+    url: `/admin/orders/${id}/cancel`,
+    method: 'put',
+    data
+  })
+}
+
+/**
+ * 添加订单备注（管理端）
+ */
+export function addOrderNote(id, data) {
+  if (MOCK_ENABLED) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const orders = getOrdersFromStorage()
+        const order = orders.find(o => o.id === Number(id))
+        
+        if (!order) {
+          reject(new Error('订单不存在'))
+          return
+        }
+        
+        if (!order.notes) {
+          order.notes = []
+        }
+        
+        order.notes.push({
+          content: data.note,
+          createdAt: new Date().toISOString()
+        })
+        order.updatedAt = new Date().toISOString()
+        
+        saveOrdersToStorage(orders)
+        console.log('📦 添加订单备注成功:', order)
+        resolve(order)
+      }, 300)
+    })
+  }
+  
+  return request({
+    url: `/admin/orders/${id}/note`,
+    method: 'post',
+    data
+  })
+}
+
+// 辅助函数：根据状态获取状态文本
+function getStatusText(status) {
+  const statusMap = {
+    pending: '待支付',
+    paid: '已支付',
+    shipped: '已发货',
+    completed: '已完成',
+    cancelled: '已取消'
+  }
+  return statusMap[status] || '未知状态'
 }
 
 /**

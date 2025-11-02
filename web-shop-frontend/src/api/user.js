@@ -7,10 +7,15 @@ import request from '@/utils/request'
 // ========== Mock 数据（开发阶段使用）==========
 const MOCK_ENABLED = true // 是否启用Mock数据
 
-// Mock用户数据
+// Mock用户数据（用户端和商家端账号分离）
 const mockUsers = [
-  { username: 'test', password: '123456', phone: '13800138000', nickname: '测试用户' },
-  { username: 'admin', password: 'admin123', phone: '13800138001', nickname: '管理员' }
+  // 普通用户账号
+  { username: 'test', password: '123456', phone: '13800138000', nickname: '测试用户', role: 'user' },
+  { username: 'user001', password: '123456', phone: '13800138002', nickname: '用户001', role: 'user' },
+  
+  // 商家账号
+  { username: 'admin', password: '123456', phone: '13900139000', nickname: '商家管理员', role: 'merchant' },
+  { username: 'merchant', password: '123456', phone: '13900139001', nickname: '商家001', role: 'merchant' }
 ]
 
 // 生成Mock Token
@@ -49,6 +54,7 @@ export function login(data) {
           username: user.username,
           nickname: user.nickname,
           phone: user.phone,
+          role: user.role || 'user', // 用户角色：user-普通用户, merchant-商家
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
         }
         
@@ -205,6 +211,57 @@ export function setDefaultAddress(id) {
   return request({
     url: `/user/address/${id}/default`,
     method: 'put'
+  })
+}
+
+/**
+ * 商家登录（仅限商家账号）
+ */
+export function merchantLogin(data) {
+  if (MOCK_ENABLED) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        const { username, password } = data
+        
+        // 查找商家账号
+        const merchant = mockUsers.find(u => u.username === username && u.role === 'merchant')
+        
+        if (!merchant) {
+          console.warn('⚠️ 商家账号不存在:', username)
+          reject(new Error('商家账号不存在或无权限'))
+          return
+        }
+        
+        if (merchant.password !== password) {
+          console.warn('⚠️ 密码错误')
+          reject(new Error('密码错误'))
+          return
+        }
+        
+        // 登录成功
+        const token = generateMockToken(username)
+        const merchantInfo = {
+          id: Date.now(),
+          username: merchant.username,
+          nickname: merchant.nickname,
+          phone: merchant.phone,
+          role: 'merchant',
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
+        }
+        
+        console.log('✅ Mock商家登录成功:', merchantInfo)
+        resolve({
+          token,
+          userInfo: merchantInfo
+        })
+      }, 500)
+    })
+  }
+  
+  return request({
+    url: '/merchant/login',
+    method: 'post',
+    data
   })
 }
 

@@ -6,7 +6,12 @@
         <!-- 左侧分类导航 -->
         <aside class="jd-category">
           <div class="category-list">
-            <div v-for="cat in categories" :key="cat.id" class="category-item">
+            <div 
+              v-for="cat in categories" 
+              :key="cat.id" 
+              class="category-item"
+              @click="goToCategory(cat.id)"
+            >
               <span class="cat-icon">{{ cat.icon }}</span>
               <span class="cat-name">{{ cat.name }}</span>
               <span class="cat-arrow">›</span>
@@ -31,15 +36,6 @@
         <!-- 右侧信息栏 -->
         <aside class="jd-sidebar">
           <div class="sidebar-card">
-            <div class="user-info">
-              <p>Hi，欢迎来到购物平台</p>
-              <div class="btn-group">
-                <el-button type="danger" size="small">登录</el-button>
-                <el-button size="small">注册</el-button>
-              </div>
-            </div>
-          </div>
-          <div class="sidebar-card">
             <div class="news-title">📢 公告</div>
             <div class="news-item">双11狂欢即将开始</div>
             <div class="news-item">新用户专享优惠</div>
@@ -57,7 +53,12 @@
           <span class="more">查看更多 ›</span>
         </div>
         <div class="seckill-list">
-          <div v-for="item in seckillProducts" :key="item.id" class="seckill-item">
+          <div 
+            v-for="item in seckillProducts" 
+            :key="item.id" 
+            class="seckill-item"
+            @click="goToProductDetail(item.id)"
+          >
             <div class="item-img" :style="{ background: item.color }">
               {{ item.name }}
             </div>
@@ -65,7 +66,7 @@
               <span class="price">¥{{ item.price }}</span>
               <span class="origin-price">¥{{ item.originPrice }}</span>
             </div>
-            <el-button type="danger" size="small" class="buy-btn">立即抢购</el-button>
+            <el-button type="danger" size="small" class="buy-btn" @click.stop="goToProductDetail(item.id)">立即抢购</el-button>
           </div>
         </div>
       </div>
@@ -112,8 +113,27 @@ const router = useRouter()
 
 // 跳转到商品详情页
 const goToProductDetail = (productId) => {
-  console.log('跳转到商品详情:', productId)
-  router.push(`/product/${productId}`)
+  console.log('🔍 点击商品，准备跳转到商品详情:', productId)
+  try {
+    router.push(`/product/${productId}`)
+    console.log('✅ 商品详情跳转成功')
+  } catch (error) {
+    console.error('❌ 商品详情跳转失败:', error)
+  }
+}
+
+// 跳转到分类商品列表
+const goToCategory = (categoryId) => {
+  console.log('📂 点击分类，准备跳转到分类列表:', categoryId)
+  try {
+    router.push({
+      path: '/products',
+      query: { categoryId }
+    })
+    console.log('✅ 分类列表跳转成功')
+  } catch (error) {
+    console.error('❌ 分类列表跳转失败:', error)
+  }
 }
 
 // 分类数据
@@ -265,21 +285,6 @@ console.log('📊 推荐:', recommendProducts.value.length)
   padding: 20px;
 }
 
-.user-info p {
-  margin: 0 0 15px;
-  color: #666;
-  font-size: 14px;
-}
-
-.btn-group {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-group .el-button {
-  flex: 1;
-}
-
 .news-title {
   font-weight: bold;
   margin-bottom: 12px;
@@ -337,6 +342,12 @@ console.log('📊 推荐:', recommendProducts.value.length)
 
 .seckill-item {
   text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.seckill-item:hover {
+  transform: translateY(-3px);
 }
 
 .item-img {

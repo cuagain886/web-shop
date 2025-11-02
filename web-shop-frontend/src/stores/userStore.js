@@ -119,6 +119,9 @@ export const useUserStore = defineStore('user', () => {
     login,
     register,
     logout,
-    fetchUserInfo
+    fetchUserInfo,
+    // 暴露设置方法（用于商家登录等场景）
+    setToken: saveToken,
+    setUserInfo: saveUserInfo
   }
 })

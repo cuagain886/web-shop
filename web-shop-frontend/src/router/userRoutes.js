@@ -10,6 +10,12 @@ export default [
     meta: { title: '首页' }
   },
   {
+    path: '/products',
+    name: 'ProductList',
+    component: () => import('@/pages/product/ProductList.vue'),
+    meta: { title: '商品列表' }
+  },
+  {
     path: '/product/:id',
     name: 'ProductDetail',
     component: () => import('@/pages/product/ProductDetail.vue'),
@@ -38,6 +44,12 @@ export default [
     name: 'OrderDetail',
     component: () => import('@/pages/order/OrderDetail.vue'),
     meta: { title: '订单详情', requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'UserProfile',
+    component: () => import('@/pages/user/UserProfile.vue'),
+    meta: { title: '个人中心', requiresAuth: true }
   },
   {
     path: '/login',

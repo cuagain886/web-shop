@@ -76,10 +76,18 @@
             <template #default>
               <div class="mock-accounts">
                 <p>账号1: test / 123456</p>
-                <p>账号2: admin / admin123</p>
+                <p>账号2: user001 / 123456</p>
               </div>
             </template>
           </el-alert>
+        </div>
+
+        <!-- 商家登录入口 -->
+        <div class="merchant-login-link">
+          <el-button text type="primary" @click="goToMerchantLogin">
+            <el-icon><Shop /></el-icon>
+            商家登录 →
+          </el-button>
         </div>
       </div>
     </div>
@@ -90,6 +98,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Shop } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 
 console.log('🔐 登录页面加载')
@@ -169,6 +178,11 @@ const goToRegister = () => {
     query: redirect ? { redirect } : {}
   })
 }
+
+// 跳转到商家登录
+const goToMerchantLogin = () => {
+  router.push('/admin/login')
+}
 </script>
 
 <style scoped>
@@ -236,6 +250,14 @@ const goToRegister = () => {
 .mock-accounts p {
   margin: 0;
   color: #666;
+}
+
+/* 商家登录链接 */
+.merchant-login-link {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
 }
 
 /* 响应式 */
