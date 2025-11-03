@@ -14,12 +14,11 @@ public interface UserService extends IService<User> {
     /**
      * 用户注册
      * 
-     * @param username 用户名
-     * @param password 密码（明文）
-     * @param phone 手机号
-     * @return 注册成功的用户
+     * @param user 用户信息（包含用户名、手机号、昵称等）
+     * @param password 密码（明文，需要加密）
+     * @return 注册成功的用户（不含密码）
      */
-    User register(String username, String password, String phone);
+    User register(User user, String password);
 
     /**
      * 用户登录

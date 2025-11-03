@@ -32,27 +32,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public User register(String username, String password, String phone) {
-        log.info("用户注册：username={}, phone={}", username, phone);
+    public User register(User user, String password) {
+        log.info("用户注册：username={}, phone={}", user.getUsername(), user.getPhone());
 
         // 检查用户名是否已存在
-        if (checkUsernameExists(username)) {
+        if (checkUsernameExists(user.getUsername())) {
             throw new IllegalArgumentException("用户名已存在");
         }
 
         // 检查手机号是否已存在
-        if (checkPhoneExists(phone)) {
+        if (checkPhoneExists(user.getPhone())) {
             throw new IllegalArgumentException("手机号已被使用");
         }
 
-        // 创建用户
-        User user = new User();
-        user.setUsername(username);
+        // 加密密码
         user.setPassword(encryptPassword(password));
-        user.setPhone(phone);
-        user.setNickname(username);  // 默认昵称为用户名
-        user.setRole("user");  // 默认角色为普通用户
-        user.setStatus(1);  // 默认启用
+
+        // 设置默认值（仅当未提供时）
+        if (user.getNickname() == null || user.getNickname().isEmpty()) {
+            user.setNickname(user.getUsername());  // 默认昵称为用户名
+        }
+        if (user.getRole() == null || user.getRole().isEmpty()) {
+            user.setRole("user");  // 默认角色为普通用户
+        }
+        if (user.getStatus() == null) {
+            user.setStatus(1);  // 默认状态为启用
+        }
 
         // 保存用户
         this.save(user);
