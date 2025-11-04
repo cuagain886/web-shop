@@ -177,11 +177,21 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateProductStock(Long productId, Integer quantity) {
-        log.info("更新商品库存：productId={}, quantity={}", productId, quantity);
+        log.info("更新商品库存（增量）：productId={}, quantity={}", productId, quantity);
 
         baseMapper.updateStock(productId, quantity);
 
         log.info("库存更新成功");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void setProductStock(Long productId, Integer stock) {
+        log.info("设置商品库存（绝对值）：productId={}, stock={}", productId, stock);
+
+        baseMapper.setStock(productId, stock);
+
+        log.info("库存设置成功");
     }
 
     @Override

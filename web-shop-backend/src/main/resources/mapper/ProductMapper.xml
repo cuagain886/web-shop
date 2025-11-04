@@ -122,10 +122,17 @@
         WHERE id = #{productId}
     </update>
 
-    <!-- 更新商品库存 -->
+    <!-- 更新商品库存（增量更新） -->
     <update id="updateStock">
         UPDATE `product`
         SET stock = stock + #{quantity}
+        WHERE id = #{productId}
+    </update>
+
+    <!-- 设置商品库存（绝对值） -->
+    <update id="setStock">
+        UPDATE `product`
+        SET stock = #{stock}
         WHERE id = #{productId}
     </update>
 

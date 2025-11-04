@@ -8,7 +8,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.pojo.common.Result;
+import org.javaweb.webshopbackend.pojo.dto.BatchProductDTO;
 import org.javaweb.webshopbackend.pojo.dto.ProductQueryDTO;
+import org.javaweb.webshopbackend.pojo.dto.UpdateStockDTO;
 import org.javaweb.webshopbackend.pojo.entity.Product;
 import org.javaweb.webshopbackend.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -191,10 +193,10 @@ public class ProductController {
      */
     @PutMapping("/batch-on-shelf")
     @Operation(summary = "批量上架商品", description = "管理员批量上架商品")
-    public Result<Void> batchOnShelf(@RequestBody List<Long> productIds) {
-        log.info("批量上架商品：count={}", productIds.size());
+    public Result<Void> batchOnShelf(@Valid @RequestBody BatchProductDTO batchProductDTO) {
+        log.info("批量上架商品：count={}", batchProductDTO.getProductIds().size());
 
-        productService.batchUpdateProductStatus(productIds, 1);
+        productService.batchUpdateProductStatus(batchProductDTO.getProductIds(), 1);
 
         return Result.success("批量上架成功");
     }
@@ -204,29 +206,28 @@ public class ProductController {
      */
     @PutMapping("/batch-off-shelf")
     @Operation(summary = "批量下架商品", description = "管理员批量下架商品")
-    public Result<Void> batchOffShelf(@RequestBody List<Long> productIds) {
-        log.info("批量下架商品：count={}", productIds.size());
+    public Result<Void> batchOffShelf(@Valid @RequestBody BatchProductDTO batchProductDTO) {
+        log.info("批量下架商品：count={}", batchProductDTO.getProductIds().size());
 
-        productService.batchUpdateProductStatus(productIds, 0);
+        productService.batchUpdateProductStatus(batchProductDTO.getProductIds(), 0);
 
         return Result.success("批量下架成功");
     }
 
     /**
-     * 更新库存
+     * 设置库存（绝对值）
      */
     @PutMapping("/{productId}/stock")
-    @Operation(summary = "更新库存", description = "管理员更新商品库存")
+    @Operation(summary = "设置库存", description = "管理员设置商品库存为指定值")
     public Result<Void> updateStock(
             @Parameter(description = "商品ID", required = true, example = "1")
             @PathVariable Long productId,
-            @Parameter(description = "库存数量", required = true, example = "100")
-            @RequestParam Integer stock) {
-        log.info("更新库存：productId={}, stock={}", productId, stock);
+            @Valid @RequestBody UpdateStockDTO updateStockDTO) {
+        log.info("设置库存：productId={}, stock={}", productId, updateStockDTO.getStock());
 
-        productService.updateProductStock(productId, stock);
+        productService.setProductStock(productId, updateStockDTO.getStock());
 
-        return Result.success("库存更新成功");
+        return Result.success("库存设置成功");
     }
 }
 

@@ -57,12 +57,20 @@ public interface ProductMapper extends BaseMapper<Product> {
     void updateSales(@Param("productId") Long productId, @Param("quantity") Integer quantity);
 
     /**
-     * 更新商品库存
+     * 更新商品库存（增量更新）
      * 
      * @param productId 商品ID
      * @param quantity 库存变化量（正数增加，负数减少）
      */
     void updateStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+
+    /**
+     * 设置商品库存（绝对值）
+     * 
+     * @param productId 商品ID
+     * @param stock 库存数量
+     */
+    void setStock(@Param("productId") Long productId, @Param("stock") Integer stock);
 
     /**
      * 批量更新商品状态

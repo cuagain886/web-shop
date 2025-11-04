@@ -111,12 +111,20 @@ public interface ProductService extends IService<Product> {
     void batchUpdateProductStatus(List<Long> productIds, Integer status);
 
     /**
-     * 更新商品库存
+     * 更新商品库存（增量更新）
      * 
      * @param productId 商品ID
      * @param quantity 库存变化量（正数增加，负数减少）
      */
     void updateProductStock(Long productId, Integer quantity);
+
+    /**
+     * 设置商品库存（绝对值）
+     * 
+     * @param productId 商品ID
+     * @param stock 库存数量
+     */
+    void setProductStock(Long productId, Integer stock);
 
     /**
      * 更新商品销量
