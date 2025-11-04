@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.OperationLogMapper">
+
+    <!-- 分页查询操作日志 -->
+    <select id="selectPage" resultType="org.javaweb.webshopbackend.pojo.entity.OperationLog">
+        SELECT
+            id,
+            operator_id,
+            operator_name,
+            operation_type,
+            operation_desc,
+            target_type,
+            target_id,
+            request_method,
+            request_url,
+            request_params,
+            response_result,
+            ip,
+            location,
+            status,
+            error_msg,
+            cost_time,
+            created_time
+        FROM `operation_log`
+        WHERE 1=1
+        <if test="operatorId != null">
+            AND operator_id = #{operatorId}
+        </if>
+        <if test="operationType != null and operationType != ''">
+            AND operation_type = #{operationType}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (operation_desc LIKE CONCAT('%', #{keyword}, '%')
+                 OR operator_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR request_url LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="startTime != null">
+            AND created_time &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_time &lt;= #{endTime}
+        </if>
+        ORDER BY created_time DESC
+    </select>
+
+    <!-- 删除指定时间之前的日志 -->
+    <delete id="deleteBeforeTime">
+        DELETE FROM `operation_log`
+        WHERE created_time &lt; #{beforeTime}
+    </delete>
+
+    <!-- 清空所有日志 -->
+    <delete id="deleteAll">
+        DELETE FROM `operation_log`
+    </delete>
+
+</mapper>
+

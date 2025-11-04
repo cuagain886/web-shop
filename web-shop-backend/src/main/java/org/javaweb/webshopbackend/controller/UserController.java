@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.pojo.common.Result;
+import org.javaweb.webshopbackend.pojo.dto.ChangePasswordDTO;
 import org.javaweb.webshopbackend.pojo.dto.LoginDTO;
 import org.javaweb.webshopbackend.pojo.dto.RegisterDTO;
 import org.javaweb.webshopbackend.pojo.entity.User;
@@ -132,13 +133,15 @@ public class UserController {
     public Result<Void> updatePassword(
             @Parameter(description = "用户ID", required = true, example = "1")
             @PathVariable Long userId,
-            @Parameter(description = "原密码", required = true, example = "123456")
-            @RequestParam String oldPassword,
-            @Parameter(description = "新密码", required = true, example = "654321")
-            @RequestParam String newPassword) {
+            @Valid @RequestBody ChangePasswordDTO changePasswordDTO) {
         log.info("修改密码：userId={}", userId);
 
-        userService.changePassword(userId, oldPassword, newPassword);
+        // 验证新密码和确认密码是否一致
+        if (!changePasswordDTO.getNewPassword().equals(changePasswordDTO.getConfirmPassword())) {
+            throw new IllegalArgumentException("两次输入的新密码不一致");
+        }
+
+        userService.changePassword(userId, changePasswordDTO.getOldPassword(), changePasswordDTO.getNewPassword());
 
         return Result.success("密码修改成功");
     }

@@ -216,11 +216,68 @@ pm.test("Login successful", function () {
 
 **接口：** PUT `/api/user/{{userId}}/password`
 
-**请求参数（Query Params）：**
-- oldPassword: 123456
-- newPassword: 654321
+**⚠️ 注意：此接口使用 Request Body 传递密码，更加安全！**
 
-**URL：** `{{baseUrl}}/api/user/{{userId}}/password?oldPassword=123456&newPassword=654321`
+**请求方式：**
+
+**方法：** `PUT`  
+**URL：** `{{baseUrl}}/api/user/{{userId}}/password`
+
+**请求头：**
+```
+Content-Type: application/json
+```
+
+**请求示例：**
+```json
+{
+  "oldPassword": "123456",
+  "newPassword": "654321",
+  "confirmPassword": "654321"
+}
+```
+
+**参数说明：**
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| oldPassword | String | 是 | 原密码（明文） |
+| newPassword | String | 是 | 新密码（明文，6-20位） |
+| confirmPassword | String | 是 | 确认新密码（需与newPassword一致） |
+
+**预期响应：**
+```json
+{
+  "code": 200,
+  "message": "密码修改成功",
+  "data": null
+}
+```
+
+**错误响应示例：**
+```json
+// 两次密码不一致
+{
+  "code": 400,
+  "message": "两次输入的新密码不一致",
+  "data": null
+}
+
+// 原密码错误
+{
+  "code": 400,
+  "message": "原密码错误",
+  "data": null
+}
+```
+
+**Postman配置步骤：**
+1. 方法选择 `PUT`
+2. URL输入 `{{baseUrl}}/api/user/{{userId}}/password`（例如：`{{baseUrl}}/api/user/5/password`）
+3. Headers 添加 `Content-Type: application/json`
+4. Body 选择 **raw** 和 **JSON**
+5. 输入请求体（见上面示例）
+6. 点击 Send
 
 ---
 

@@ -6,6 +6,7 @@ import lombok.Data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 订单实体类
@@ -133,5 +134,11 @@ public class Orders implements Serializable {
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedTime;
+
+    /**
+     * 订单项列表（非数据库字段，用于关联查询）
+     */
+    @TableField(exist = false)
+    private List<OrderItem> items;
 }
 
