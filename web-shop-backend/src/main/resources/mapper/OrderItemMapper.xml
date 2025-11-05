@@ -10,11 +10,11 @@
             product_id,
             product_name,
             product_image,
-            price,
+            unit_price,
             quantity,
+            total_price,
             spec_info,
-            created_time,
-            updated_time
+            is_reviewed
         FROM `order_item`
         WHERE order_id = #{orderId}
         ORDER BY id ASC
@@ -28,20 +28,21 @@
             oi.product_id,
             oi.product_name,
             oi.product_image,
-            oi.price,
+            oi.unit_price,
             oi.quantity,
+            oi.total_price,
             oi.spec_info,
-            oi.created_time,
-            oi.updated_time
+            oi.is_reviewed
         FROM `order_item` oi
         INNER JOIN `orders` o ON oi.order_id = o.id
+        INNER JOIN `user` u ON o.user_id = u.id AND u.deleted = 0
         WHERE o.user_id = #{userId}
         AND o.status = 4  -- 已完成
         AND NOT EXISTS (
             SELECT 1 FROM `product_review` pr
             WHERE pr.order_item_id = oi.id
         )
-        ORDER BY oi.created_time DESC
+        ORDER BY oi.id DESC
     </select>
 
     <!-- 查询用户已评价的订单项 -->
@@ -52,19 +53,20 @@
             oi.product_id,
             oi.product_name,
             oi.product_image,
-            oi.price,
+            oi.unit_price,
             oi.quantity,
+            oi.total_price,
             oi.spec_info,
-            oi.created_time,
-            oi.updated_time
+            oi.is_reviewed
         FROM `order_item` oi
         INNER JOIN `orders` o ON oi.order_id = o.id
+        INNER JOIN `user` u ON o.user_id = u.id AND u.deleted = 0
         WHERE o.user_id = #{userId}
         AND EXISTS (
             SELECT 1 FROM `product_review` pr
             WHERE pr.order_item_id = oi.id
         )
-        ORDER BY oi.created_time DESC
+        ORDER BY oi.id DESC
     </select>
 
     <!-- 统计商品销售数据（用于销售排行） -->

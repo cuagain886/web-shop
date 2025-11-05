@@ -32,6 +32,7 @@
             p.stock AS product_stock,
             p.status AS product_status
         FROM user_favorite uf
+        INNER JOIN user u ON uf.user_id = u.id AND u.deleted = 0
         LEFT JOIN product p ON uf.product_id = p.id AND p.deleted = 0
         WHERE uf.deleted = 0 
           AND uf.user_id = #{userId}
@@ -53,17 +54,19 @@
 
     <!-- 取消收藏 -->
     <update id="deleteByUserIdAndProductId">
-        UPDATE user_favorite
-        SET deleted = 1
-        WHERE user_id = #{userId} 
-          AND product_id = #{productId}
+        UPDATE user_favorite uf
+        INNER JOIN user u ON uf.user_id = u.id AND u.deleted = 0
+        SET uf.deleted = 1
+        WHERE uf.user_id = #{userId} 
+          AND uf.product_id = #{productId}
     </update>
 
     <!-- 清空用户收藏 -->
     <update id="deleteByUserId">
-        UPDATE user_favorite
-        SET deleted = 1
-        WHERE user_id = #{userId}
+        UPDATE user_favorite uf
+        INNER JOIN user u ON uf.user_id = u.id AND u.deleted = 0
+        SET uf.deleted = 1
+        WHERE uf.user_id = #{userId}
     </update>
 
     <!-- 统计商品被收藏次数 -->

@@ -42,6 +42,7 @@
         UPDATE user
         SET last_login_time = NOW()
         WHERE id = #{userId}
+          AND deleted = 0
     </update>
 
 </mapper>

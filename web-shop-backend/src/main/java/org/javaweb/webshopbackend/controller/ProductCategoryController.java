@@ -43,7 +43,7 @@ public class ProductCategoryController {
     /**
      * 获取子分类
      */
-    @GetMapping("/{parentId}/children")
+    @GetMapping("/children/{parentId}")
     @Operation(summary = "获取子分类", description = "根据父分类ID获取子分类列表")
     public Result<List<ProductCategory>> getChildCategories(
             @Parameter(description = "父分类ID", required = true, example = "1")

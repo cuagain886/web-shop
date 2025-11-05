@@ -43,7 +43,8 @@
             p.cover_image AS p_cover_image,
             p.status AS p_status
         FROM `shopping_cart` sc
-        LEFT JOIN `product` p ON sc.product_id = p.id
+        INNER JOIN `user` u ON sc.user_id = u.id AND u.deleted = 0
+        LEFT JOIN `product` p ON sc.product_id = p.id AND p.deleted = 0
         WHERE sc.user_id = #{userId}
         ORDER BY sc.created_time DESC
     </select>
@@ -67,7 +68,8 @@
             p.cover_image AS p_cover_image,
             p.status AS p_status
         FROM `shopping_cart` sc
-        LEFT JOIN `product` p ON sc.product_id = p.id
+        INNER JOIN `user` u ON sc.user_id = u.id AND u.deleted = 0
+        LEFT JOIN `product` p ON sc.product_id = p.id AND p.deleted = 0
         WHERE sc.user_id = #{userId}
         AND sc.checked = 1
         ORDER BY sc.created_time DESC
@@ -75,22 +77,25 @@
 
     <!-- 更新购物车项选中状态 -->
     <update id="updateCheckedByUserId">
-        UPDATE `shopping_cart`
-        SET checked = #{checked}
-        WHERE user_id = #{userId}
+        UPDATE `shopping_cart` sc
+        INNER JOIN `user` u ON sc.user_id = u.id AND u.deleted = 0
+        SET sc.checked = #{checked}
+        WHERE sc.user_id = #{userId}
     </update>
 
     <!-- 清空用户购物车 -->
     <delete id="deleteByUserId">
-        DELETE FROM `shopping_cart`
-        WHERE user_id = #{userId}
+        DELETE sc FROM `shopping_cart` sc
+        INNER JOIN `user` u ON sc.user_id = u.id AND u.deleted = 0
+        WHERE sc.user_id = #{userId}
     </delete>
 
     <!-- 删除用户已选中的购物车项 -->
     <delete id="deleteCheckedByUserId">
-        DELETE FROM `shopping_cart`
-        WHERE user_id = #{userId}
-        AND checked = 1
+        DELETE sc FROM `shopping_cart` sc
+        INNER JOIN `user` u ON sc.user_id = u.id AND u.deleted = 0
+        WHERE sc.user_id = #{userId}
+        AND sc.checked = 1
     </delete>
 
 </mapper>

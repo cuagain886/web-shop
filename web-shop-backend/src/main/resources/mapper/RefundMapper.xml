@@ -112,6 +112,7 @@
             o.status AS order_status
         FROM refund r
         LEFT JOIN orders o ON r.order_id = o.id AND o.deleted = 0
+        INNER JOIN user u ON o.user_id = u.id AND u.deleted = 0
         WHERE r.deleted = 0
           AND o.user_id = #{userId}
         ORDER BY r.created_time DESC

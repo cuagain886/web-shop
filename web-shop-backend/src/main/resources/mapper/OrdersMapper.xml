@@ -73,8 +73,10 @@
             oi.quantity AS item_quantity,
             oi.spec_info AS item_spec_info
         FROM `orders` o
+        INNER JOIN `user` u ON o.user_id = u.id AND u.deleted = 0
         LEFT JOIN `order_item` oi ON o.id = oi.order_id
-        WHERE o.user_id = #{userId}
+        WHERE o.deleted = 0
+          AND o.user_id = #{userId}
         <if test="status != null">
             AND o.status = #{status}
         </if>
@@ -115,7 +117,7 @@
             oi.spec_info AS item_spec_info
         FROM `orders` o
         LEFT JOIN `order_item` oi ON o.id = oi.order_id
-        WHERE 1=1
+        WHERE o.deleted = 0
         <if test="status != null">
             AND o.status = #{status}
         </if>
@@ -166,22 +168,26 @@
             oi.spec_info AS item_spec_info
         FROM `orders` o
         LEFT JOIN `order_item` oi ON o.id = oi.order_id
-        WHERE o.order_no = #{orderNo}
+        WHERE o.deleted = 0
+          AND o.order_no = #{orderNo}
     </select>
 
     <!-- 统计用户各状态订单数量 -->
     <select id="countByUserIdAndStatus" resultType="java.lang.Long">
         SELECT COUNT(*)
-        FROM `orders`
-        WHERE user_id = #{userId}
-        AND status = #{status}
+        FROM `orders` o
+        INNER JOIN `user` u ON o.user_id = u.id AND u.deleted = 0
+        WHERE o.deleted = 0
+          AND o.user_id = #{userId}
+          AND o.status = #{status}
     </select>
 
     <!-- 统计时间范围内的销售额 -->
     <select id="sumAmountByDateRange" resultType="java.lang.Double">
         SELECT IFNULL(SUM(total_amount), 0)
         FROM `orders`
-        WHERE status IN (2, 3, 4)  -- 已支付、已发货、已完成
+        WHERE deleted = 0
+          AND status IN (2, 3, 4)  -- 已支付、已发货、已完成
         <if test="startTime != null">
             AND created_time &gt;= #{startTime}
         </if>
@@ -196,6 +202,7 @@
             status,
             COUNT(*) AS id  -- 使用id字段临时存储count值
         FROM `orders`
+        WHERE deleted = 0
         GROUP BY status
     </select>
 

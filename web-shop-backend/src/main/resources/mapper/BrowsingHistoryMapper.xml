@@ -32,6 +32,7 @@
             p.stock AS product_stock,
             p.status AS product_status
         FROM browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
         LEFT JOIN product p ON bh.product_id = p.id AND p.deleted = 0
         WHERE bh.deleted = 0 
           AND bh.user_id = #{userId}
@@ -56,25 +57,28 @@
 
     <!-- 删除用户指定商品的浏览记录 -->
     <update id="deleteByUserIdAndProductId">
-        UPDATE browsing_history
-        SET deleted = 1
-        WHERE user_id = #{userId} 
-          AND product_id = #{productId}
+        UPDATE browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
+        SET bh.deleted = 1
+        WHERE bh.user_id = #{userId} 
+          AND bh.product_id = #{productId}
     </update>
 
     <!-- 清空用户浏览历史 -->
     <update id="deleteByUserId">
-        UPDATE browsing_history
-        SET deleted = 1
-        WHERE user_id = #{userId}
+        UPDATE browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
+        SET bh.deleted = 1
+        WHERE bh.user_id = #{userId}
     </update>
 
     <!-- 删除用户超过指定天数的浏览记录 -->
     <update id="deleteOldRecords">
-        UPDATE browsing_history
-        SET deleted = 1
-        WHERE user_id = #{userId}
-          AND view_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        UPDATE browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
+        SET bh.deleted = 1
+        WHERE bh.user_id = #{userId}
+          AND bh.view_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
     </update>
 
     <!-- 查询热门商品（基于浏览次数） -->

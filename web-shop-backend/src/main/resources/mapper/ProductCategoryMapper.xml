@@ -10,7 +10,7 @@
             parent_id AS parentId,
             icon,
             sort,
-            description,
+            deleted,
             created_time AS createdTime,
             updated_time AS updatedTime
         FROM product_category
@@ -27,7 +27,7 @@
             parent_id AS parentId,
             icon,
             sort,
-            description,
+            deleted,
             created_time AS createdTime,
             updated_time AS updatedTime
         FROM product_category

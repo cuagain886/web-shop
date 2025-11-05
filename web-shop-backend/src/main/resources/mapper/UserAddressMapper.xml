@@ -5,47 +5,53 @@
     <!-- 查询用户的所有地址 -->
     <select id="selectByUserId" resultType="org.javaweb.webshopbackend.pojo.entity.UserAddress">
         SELECT
-            id,
-            user_id,
-            receiver_name,
-            receiver_phone,
-            province,
-            city,
-            district,
-            detail_address,
-            is_default,
-            created_time,
-            updated_time
-        FROM `user_address`
-        WHERE user_id = #{userId}
-        ORDER BY is_default DESC, created_time DESC
+            ua.id,
+            ua.user_id,
+            ua.receiver_name,
+            ua.receiver_phone,
+            ua.province,
+            ua.city,
+            ua.district,
+            ua.detail_address,
+            ua.is_default,
+            ua.created_time,
+            ua.updated_time
+        FROM `user_address` ua
+        INNER JOIN `user` u ON ua.user_id = u.id AND u.deleted = 0
+        WHERE ua.deleted = 0
+          AND ua.user_id = #{userId}
+        ORDER BY ua.is_default DESC, ua.created_time DESC
     </select>
 
     <!-- 查询用户的默认地址 -->
     <select id="selectDefaultByUserId" resultType="org.javaweb.webshopbackend.pojo.entity.UserAddress">
         SELECT
-            id,
-            user_id,
-            receiver_name,
-            receiver_phone,
-            province,
-            city,
-            district,
-            detail_address,
-            is_default,
-            created_time,
-            updated_time
-        FROM `user_address`
-        WHERE user_id = #{userId}
-        AND is_default = 1
+            ua.id,
+            ua.user_id,
+            ua.receiver_name,
+            ua.receiver_phone,
+            ua.province,
+            ua.city,
+            ua.district,
+            ua.detail_address,
+            ua.is_default,
+            ua.created_time,
+            ua.updated_time
+        FROM `user_address` ua
+        INNER JOIN `user` u ON ua.user_id = u.id AND u.deleted = 0
+        WHERE ua.deleted = 0
+          AND ua.user_id = #{userId}
+          AND ua.is_default = 1
         LIMIT 1
     </select>
 
     <!-- 取消用户的所有默认地址 -->
     <update id="cancelDefaultByUserId">
-        UPDATE `user_address`
-        SET is_default = 0
-        WHERE user_id = #{userId}
+        UPDATE `user_address` ua
+        INNER JOIN `user` u ON ua.user_id = u.id AND u.deleted = 0
+        SET ua.is_default = 0
+        WHERE ua.deleted = 0
+          AND ua.user_id = #{userId}
     </update>
 
 </mapper>
