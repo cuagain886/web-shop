@@ -40,9 +40,10 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
             throw new IllegalArgumentException("订单不存在");
         }
 
-        // 2. 验证订单状态（只有已支付或已发货的订单才能退款）
-        if (order.getStatus() != 2 && order.getStatus() != 3) {
-            throw new IllegalArgumentException("订单状态不支持退款");
+        // 2. 验证订单状态（只有已支付、已发货、已收货的订单才能退款）
+        // status: 1-待发货(已支付), 2-已发货, 3-已收货
+        if (order.getStatus() != 1 && order.getStatus() != 2 && order.getStatus() != 3) {
+            throw new IllegalArgumentException("订单状态不支持退款，只有已支付、已发货、已收货的订单可以退款");
         }
 
         // 3. 验证退款金额
@@ -75,7 +76,7 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void reviewRefund(Long refundId, Integer status, String remark) {
+    public void reviewRefund(Long refundId, Integer status) {
         log.info("商家审核退款：refundId={}, status={}", refundId, status);
 
         // 1. 获取退款申请
@@ -89,21 +90,32 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
             throw new IllegalArgumentException("退款申请已处理");
         }
 
-        // 3. 更新退款状态
+        // 3. 获取订单信息（用于记录原始状态）
+        Orders order = ordersService.getById(refund.getOrderId());
+        if (order == null) {
+            throw new IllegalArgumentException("关联订单不存在");
+        }
+
+        // 4. 更新退款状态
         refund.setStatus(status);
-        refund.setRemark(remark);
         this.updateById(refund);
 
-        // 4. 更新订单状态
-        Orders order = ordersService.getById(refund.getOrderId());
+        // 5. 更新订单状态
         if (status == 1) {
             // 同意退款
             order.setStatus(7); // 已退款
-            log.info("退款申请已同意");
+            log.info("退款申请已同意，订单状态更新为已退款");
         } else {
-            // 拒绝退款，恢复原状态
-            order.setStatus(2); // 恢复为已支付
-            log.info("退款申请已拒绝");
+            // 拒绝退款，需要根据支付时间和发货时间判断应该恢复到什么状态
+            if (order.getShipTime() != null) {
+                // 已发货，恢复为已发货状态
+                order.setStatus(2);
+                log.info("退款申请已拒绝，订单状态恢复为已发货");
+            } else {
+                // 未发货，恢复为待发货状态
+                order.setStatus(1);
+                log.info("退款申请已拒绝，订单状态恢复为待发货");
+            }
         }
         ordersService.updateById(order);
 
@@ -123,6 +135,9 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
 
         // 2. 验证权限
         Orders order = ordersService.getById(refund.getOrderId());
+        if (order == null) {
+            throw new IllegalArgumentException("关联订单不存在");
+        }
         if (!order.getUserId().equals(userId)) {
             throw new IllegalArgumentException("无权操作此退款申请");
         }
@@ -136,8 +151,20 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
         refund.setStatus(2); // 已取消
         this.updateById(refund);
 
-        // 5. 恢复订单状态
-        order.setStatus(2); // 恢复为已支付
+        // 5. 恢复订单状态，根据发货情况判断
+        if (order.getReceiveTime() != null) {
+            // 已收货
+            order.setStatus(3);
+            log.info("退款申请已取消，订单状态恢复为已收货");
+        } else if (order.getShipTime() != null) {
+            // 已发货
+            order.setStatus(2);
+            log.info("退款申请已取消，订单状态恢复为已发货");
+        } else {
+            // 未发货
+            order.setStatus(1);
+            log.info("退款申请已取消，订单状态恢复为待发货");
+        }
         ordersService.updateById(order);
 
         log.info("退款申请已取消");

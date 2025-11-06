@@ -10,7 +10,6 @@
         <result property="refundAmount" column="refund_amount"/>
         <result property="reason" column="reason"/>
         <result property="status" column="status"/>
-        <result property="remark" column="remark"/>
         <result property="createdTime" column="created_time"/>
         <result property="handleTime" column="handle_time"/>
         <!-- 关联订单信息 -->
@@ -32,7 +31,6 @@
             r.refund_amount,
             r.reason,
             r.status,
-            r.remark,
             r.created_time,
             r.handle_time,
             o.order_no,
@@ -61,7 +59,6 @@
             refund_amount AS refundAmount,
             reason,
             status,
-            remark,
             created_time AS createdTime,
             handle_time AS handleTime
         FROM refund
@@ -78,7 +75,6 @@
             refund_amount AS refundAmount,
             reason,
             status,
-            remark,
             created_time AS createdTime,
             handle_time AS handleTime
         FROM refund
@@ -103,7 +99,6 @@
             r.refund_amount,
             r.reason,
             r.status,
-            r.remark,
             r.created_time,
             r.handle_time,
             o.order_no,
@@ -127,7 +122,6 @@
             r.refund_amount,
             r.reason,
             r.status,
-            r.remark,
             r.created_time,
             r.handle_time,
             o.order_no,

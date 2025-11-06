@@ -25,9 +25,8 @@ public interface RefundService extends IService<Refund> {
      * 
      * @param refundId 退款ID
      * @param status 审核状态（1-同意，2-拒绝）
-     * @param remark 审核备注
      */
-    void reviewRefund(Long refundId, Integer status, String remark);
+    void reviewRefund(Long refundId, Integer status);
 
     /**
      * 取消退款申请

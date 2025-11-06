@@ -51,11 +51,6 @@ public class Refund implements Serializable {
     private Integer status;
 
     /**
-     * 审核备注
-     */
-    private String remark;
-
-    /**
      * 逻辑删除（0-未删除，1-已删除）
      */
     @TableLogic

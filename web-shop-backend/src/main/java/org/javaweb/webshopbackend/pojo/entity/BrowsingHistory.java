@@ -35,12 +35,6 @@ public class BrowsingHistory implements Serializable {
     private Long productId;
 
     /**
-     * 逻辑删除（0-未删除，1-已删除）
-     */
-    @TableLogic
-    private Integer deleted;
-
-    /**
      * 浏览时间
      */
     @TableField(fill = FieldFill.INSERT)

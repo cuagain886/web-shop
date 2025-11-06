@@ -49,12 +49,10 @@ public class RefundController {
             @Parameter(description = "退款ID", required = true, example = "1")
             @PathVariable Long refundId,
             @Parameter(description = "审核状态（1-同意，2-拒绝）", required = true, example = "1")
-            @RequestParam Integer status,
-            @Parameter(description = "审核备注", example = "同意退款")
-            @RequestParam(required = false) String remark) {
+            @RequestParam Integer status) {
         log.info("商家审核退款：refundId={}, status={}", refundId, status);
 
-        refundService.reviewRefund(refundId, status, remark);
+        refundService.reviewRefund(refundId, status);
 
         return Result.success("审核完成");
     }
