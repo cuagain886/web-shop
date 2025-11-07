@@ -48,9 +48,22 @@ export const useCartStore = defineStore('cart', () => {
   const fetchCartList = async () => {
     try {
       const data = await getCartList()
-      cartList.value = data
-      cartCount.value = data.reduce((sum, item) => sum + item.quantity, 0)
-      return data
+      console.log('📦 后端返回的购物车数据:', data)
+      // 转换后端数据格式为前端期望的格式
+      cartList.value = data.map(item => ({
+        id: item.id,
+        productId: item.productId,
+        name: item.product?.name || '未知商品',
+        price: item.product?.price || 0,
+        image: item.product?.coverImage || item.product?.image || '',
+        specs: item.specInfo ? JSON.parse(item.specInfo) : {},
+        quantity: item.quantity,
+        stock: item.product?.stock || 0,
+        checked: item.checked === 1
+      }))
+      console.log('📦 转换后的购物车数据:', cartList.value)
+      cartCount.value = cartList.value.reduce((sum, item) => sum + item.quantity, 0)
+      return cartList.value
     } catch (error) {
       console.error('获取购物车列表失败：', error)
       throw error

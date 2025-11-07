@@ -4,7 +4,7 @@
 
 import { ORDER_STORAGE_KEY } from './order'
 
-const MOCK_ENABLED = true
+const MOCK_ENABLED = false
 
 /**
  * 获取销售概览数据

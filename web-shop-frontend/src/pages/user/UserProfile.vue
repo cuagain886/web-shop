@@ -363,14 +363,21 @@ const goToReviews = () => {
  */
 const loadRecentOrders = async () => {
   try {
-    const result = await getOrderList({ page: 1, pageSize: 3 })
-    recentOrders.value = result.list
+    const userId = userStore.userInfo?.id
+    if (!userId) {
+      console.warn('用户未登录，无法加载订单')
+      return
+    }
+
+    const result = await getOrderList({ userId, page: 1, pageSize: 3 })
+    recentOrders.value = result.records || []
 
     // 统计待办事项
-    const allOrders = await getOrderList({ page: 1, pageSize: 100 })
-    todoStats.pendingPay = allOrders.list.filter(o => o.status === 'pending').length
-    todoStats.pendingReceive = allOrders.list.filter(o => o.status === 'shipped').length
-    todoStats.pendingReview = allOrders.list.filter(o => o.status === 'completed' && !o.reviewed).length
+    const allOrders = await getOrderList({ userId, page: 1, pageSize: 100 })
+    const orders = allOrders.records || []
+    todoStats.pendingPay = orders.filter(o => o.status === 0).length
+    todoStats.pendingReceive = orders.filter(o => o.status === 3).length
+    todoStats.pendingReview = orders.filter(o => o.status === 4 && !o.reviewed).length
   } catch (error) {
     console.error('加载订单失败:', error)
   }

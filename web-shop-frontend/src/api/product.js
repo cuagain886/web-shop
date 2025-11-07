@@ -5,7 +5,7 @@
 import request from '@/utils/request'
 
 // ========== Mock 数据（开发阶段使用）==========
-const MOCK_ENABLED = true // 是否启用Mock数据
+const MOCK_ENABLED = false // 是否启用Mock数据
 
 // Mock商品列表数据
 const mockProductList = [
@@ -797,7 +797,7 @@ export const getProductList = (params = {}) => {
   }
   
   return request({
-    url: '/products',
+    url: '/product/list',
     method: 'get',
     params
   })

@@ -3,9 +3,10 @@
  */
 
 import request from '@/utils/request'
+import { useUserStore } from '@/stores/userStore'
 
 // ========== Mock 数据（开发阶段使用）==========
-const MOCK_ENABLED = true // 是否启用Mock数据
+const MOCK_ENABLED = false // 是否启用Mock数据
 const ADDRESS_STORAGE_KEY = 'mock_address_data' // localStorage存储key
 
 // 从localStorage获取地址数据
@@ -75,8 +76,11 @@ export function getAddressList() {
     })
   }
   
+  const userStore = useUserStore()
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  
   return request({
-    url: '/address/list',
+    url: `/address/user/${userId}`,
     method: 'get'
   })
 }
@@ -96,8 +100,11 @@ export function getDefaultAddress() {
     })
   }
   
+  const userStore = useUserStore()
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  
   return request({
-    url: '/address/default',
+    url: `/address/user/${userId}/default`,
     method: 'get'
   })
 }
@@ -159,7 +166,7 @@ export function addAddress(data) {
   }
   
   return request({
-    url: '/address/add',
+    url: '/address',
     method: 'post',
     data
   })
@@ -231,8 +238,11 @@ export function deleteAddress(id) {
     })
   }
   
+  const userStore = useUserStore()
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  
   return request({
-    url: `/address/${id}`,
+    url: `/address/${id}?userId=${userId}`,
     method: 'delete'
   })
 }
@@ -267,8 +277,11 @@ export function setDefaultAddress(id) {
     })
   }
   
+  const userStore = useUserStore()
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  
   return request({
-    url: `/address/${id}/default`,
+    url: `/address/${id}/default?userId=${userId}`,
     method: 'put'
   })
 }

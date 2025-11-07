@@ -116,6 +116,16 @@ const userStore = useUserStore()
 const loading = ref(false)
 const currentStatus = ref('all')
 
+// 状态映射：前端字符串 -> 后端数字
+const statusMap = {
+  'pending': 0,    // 待支付
+  'paid': 1,       // 已支付
+  'processing': 2, // 待发货
+  'shipped': 3,    // 已发货
+  'completed': 4,  // 已完成
+  'cancelled': 5   // 已取消
+}
+
 // 状态标签
 const statusTabs = ref([
   { label: '全部', value: 'all', count: 0 },
@@ -131,7 +141,9 @@ const displayOrders = computed(() => {
   if (currentStatus.value === 'all') {
     return orderStore.orderList
   }
-  return orderStore.orderList.filter(order => order.status === currentStatus.value)
+  // 后端返回的是数字状态，需要转换
+  const statusCode = statusMap[currentStatus.value]
+  return orderStore.orderList.filter(order => order.status === statusCode)
 })
 
 /**
@@ -148,7 +160,22 @@ const changeStatus = async (status) => {
 const fetchOrders = async () => {
   try {
     loading.value = true
-    const params = currentStatus.value === 'all' ? {} : { status: currentStatus.value }
+    const userId = userStore.userInfo?.id
+    if (!userId) {
+      ElMessage.warning('请先登录')
+      return
+    }
+    
+    const params = {
+      userId,
+      page: 1,
+      pageSize: 100  // 获取更多数据用于统计
+    }
+    if (currentStatus.value !== 'all') {
+      // 将前端状态字符串转换为后端数字
+      params.status = statusMap[currentStatus.value]
+    }
+    
     await orderStore.fetchOrderList(params)
     
     // 更新状态标签的数量
@@ -171,7 +198,9 @@ const updateStatusCounts = () => {
     if (tab.value === 'all') {
       tab.count = allOrders.length
     } else {
-      tab.count = allOrders.filter(order => order.status === tab.value).length
+      // 后端返回的是数字状态，需要转换
+      const statusCode = statusMap[tab.value]
+      tab.count = allOrders.filter(order => order.status === statusCode).length
     }
   })
 }

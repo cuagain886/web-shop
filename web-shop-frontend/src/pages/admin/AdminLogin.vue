@@ -92,7 +92,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
-import { merchantLogin } from '@/api/user'
+import { login } from '@/api/user'
 
 const router = useRouter()
 const route = useRoute()
@@ -126,11 +126,26 @@ const handleLogin = async () => {
     
     loading.value = true
     
-    // 调用商家登录API
-    const { token, userInfo } = await merchantLogin({
+    // 调试：打印请求数据
+    console.log('🔍 登录请求数据:', {
       username: loginForm.username,
       password: loginForm.password
     })
+    
+    // 调用登录API（商家和用户使用同一个接口）
+    const { token, userInfo } = await login({
+      username: loginForm.username,
+      password: loginForm.password
+    })
+    
+    console.log('✅ 登录响应:', { token, userInfo })
+    
+    // 检查是否为管理员账号（role可能是字符串或数字）
+    const role = String(userInfo.role).toLowerCase()
+    if (role !== 'admin' && role !== 'merchant' && role !== '1') {
+      ElMessage.error('该账号无管理员权限')
+      return
+    }
     
     // 存储token和用户信息
     userStore.setToken(token)

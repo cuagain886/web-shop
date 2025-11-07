@@ -29,9 +29,10 @@ export const useOrderStore = defineStore('order', () => {
   const fetchOrderList = async (params = {}) => {
     try {
       loading.value = true
-      const orders = await getOrderListApi(params)
-      orderList.value = orders
-      return orders
+      const result = await getOrderListApi(params)
+      // 后端返回IPage对象，数据在records字段中
+      orderList.value = result.records || []
+      return result
     } catch (error) {
       console.error('获取订单列表失败:', error)
       throw error

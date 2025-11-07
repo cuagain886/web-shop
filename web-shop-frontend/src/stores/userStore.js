@@ -6,8 +6,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { login as loginApi, logout as logoutApi, register as registerApi, getUserInfo } from '@/api/user'
 
-const USER_STORAGE_KEY = 'user_info'
-const TOKEN_STORAGE_KEY = 'user_token'
+const USER_STORAGE_KEY = 'shop_user_info'
+const TOKEN_STORAGE_KEY = 'shop_token'
 
 export const useUserStore = defineStore('user', () => {
   // 状态
@@ -80,21 +80,13 @@ export const useUserStore = defineStore('user', () => {
 
   // 登出
   const logout = async () => {
-    try {
-      console.log('👋 开始登出')
-      await logoutApi()
-      
-      // 清除用户信息
-      saveToken('')
-      saveUserInfo(null)
-      
-      console.log('✅ 登出成功')
-    } catch (error) {
-      console.error('❌ 登出失败:', error)
-      // 即使失败也清除本地信息
-      saveToken('')
-      saveUserInfo(null)
-    }
+    console.log('👋 开始登出')
+    
+    // 直接清除本地信息，不需要调用后端API
+    saveToken('')
+    saveUserInfo(null)
+    
+    console.log('✅ 登出成功')
   }
 
   // 获取用户信息

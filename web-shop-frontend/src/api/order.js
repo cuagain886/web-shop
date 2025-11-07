@@ -5,7 +5,7 @@
 import request from '@/utils/request'
 
 // ========== Mock 数据（开发阶段使用）==========
-const MOCK_ENABLED = true // 是否启用Mock数据
+const MOCK_ENABLED = false // 是否启用Mock数据
 export const ORDER_STORAGE_KEY = 'mock_order_data' // localStorage存储key（导出供其他模块使用）
 
 // 从localStorage获取订单数据
@@ -171,7 +171,7 @@ export function createOrder(data) {
   }
   
   return request({
-    url: '/order/create',
+    url: '/orders',
     method: 'post',
     data
   })
@@ -193,8 +193,8 @@ export function getOrderList(params = {}) {
         
         // 按关键词搜索（订单号或商品名）
         if (params.keyword) {
-          orders = orders.filter(order => 
-            order.orderNo.includes(params.keyword) || 
+          orders = orders.filter(order =>
+            order.orderNo.includes(params.keyword) ||
             order.items.some(item => item.productName.includes(params.keyword))
           )
         }
@@ -205,10 +205,16 @@ export function getOrderList(params = {}) {
     })
   }
   
+  // 使用用户订单接口
+  const { userId, page = 1, pageSize = 10, status } = params
   return request({
-    url: '/order/list',
+    url: `/orders/user/${userId}`,
     method: 'get',
-    params
+    params: {
+      pageNum: page,
+      pageSize,
+      status
+    }
   })
 }
 
@@ -233,7 +239,7 @@ export function getOrderDetail(id) {
   }
   
   return request({
-    url: `/order/${id}`,
+    url: `/orders/${id}`,
     method: 'get'
   })
 }

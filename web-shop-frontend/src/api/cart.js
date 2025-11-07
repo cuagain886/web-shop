@@ -3,9 +3,10 @@
  */
 
 import request from '@/utils/request'
+import { useUserStore } from '@/stores/userStore'
 
 // ========== Mock 数据（开发阶段使用）==========
-const MOCK_ENABLED = true // 是否启用Mock数据
+const MOCK_ENABLED = false // 是否启用Mock数据
 const CART_STORAGE_KEY = 'mock_cart_data' // localStorage存储key
 
 // 从localStorage获取购物车数据
@@ -45,8 +46,11 @@ export function getCartList() {
     })
   }
   
+  const userStore = useUserStore()
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  
   return request({
-    url: '/cart',
+    url: `/cart/${userId}`,
     method: 'get'
   })
 }
@@ -63,8 +67,8 @@ export function addToCart(data) {
         
         // 查找是否已存在相同商品和规格
         const specsKey = JSON.stringify(data.specs || {})
-        const existingIndex = cart.findIndex(item => 
-          item.productId === data.productId && 
+        const existingIndex = cart.findIndex(item =>
+          item.productId === data.productId &&
           JSON.stringify(item.specs) === specsKey
         )
         
@@ -96,10 +100,25 @@ export function addToCart(data) {
     })
   }
   
+  // 获取用户ID
+  const userStore = useUserStore()
+  console.log('🔍 userStore.userInfo:', userStore.userInfo)
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  console.log('🔍 最终使用的userId:', userId)
+  
+  // 转换为后端期望的格式
+  const cartData = {
+    userId: userId,
+    productId: data.productId,
+    quantity: data.quantity,
+    specInfo: JSON.stringify(data.specs || {})
+  }
+  console.log('🔍 发送到后端的数据:', cartData)
+  
   return request({
     url: '/cart',
     method: 'post',
-    data
+    data: cartData
   })
 }
 
@@ -264,8 +283,11 @@ export function getCartCount() {
     })
   }
   
+  const userStore = useUserStore()
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  
   return request({
-    url: '/cart/count',
+    url: `/cart/${userId}/count`,
     method: 'get'
   })
 }

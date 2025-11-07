@@ -5,7 +5,7 @@
 import request from '@/utils/request'
 
 // ========== Mock 数据（开发阶段使用）==========
-const MOCK_ENABLED = true // 是否启用Mock数据
+const MOCK_ENABLED = false // 是否启用Mock数据
 const CATEGORY_STORAGE_KEY = 'mock_category_data' // localStorage存储key
 
 // 从localStorage获取分类数据
@@ -210,7 +210,7 @@ export function addCategory(data) {
   }
   
   return request({
-    url: '/category/add',
+    url: '/category',
     method: 'post',
     data
   })

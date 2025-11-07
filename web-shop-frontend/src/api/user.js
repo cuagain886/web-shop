@@ -5,7 +5,7 @@
 import request from '@/utils/request'
 
 // ========== Mock 数据（开发阶段使用）==========
-const MOCK_ENABLED = true // 是否启用Mock数据
+const MOCK_ENABLED = false // 是否启用Mock数据
 
 // Mock用户数据（用户端和商家端账号分离）
 const mockUsers = [
@@ -71,6 +71,19 @@ export function login(data) {
     url: '/user/login',
     method: 'post',
     data
+  }).then(res => {
+    // 转换后端返回的数据格式
+    return {
+      token: res.token,
+      userInfo: {
+        id: res.userId,
+        username: res.username,
+        nickname: res.nickname,
+        email: res.email,
+        phone: res.phone,
+        role: res.role
+      }
+    }
   })
 }
 

@@ -217,6 +217,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ShoppingCart, Select, Van, RefreshRight } from '@element-plus/icons-vue'
 import { getProductDetail } from '@/api/product'
+import { recordBrowsing } from '@/api/history'
 import { useCartStore } from '@/stores/cartStore'
 import { useUserStore } from '@/stores/userStore'
 
@@ -246,7 +247,12 @@ const product = ref({
 
 // 当前选中的图片
 const currentImageIndex = ref(0)
-const currentImage = computed(() => product.value.images[currentImageIndex.value] || '')
+const currentImage = computed(() => {
+  if (product.value.images && product.value.images.length > 0) {
+    return product.value.images[currentImageIndex.value] || product.value.images[0]
+  }
+  return ''
+})
 
 // 选中的规格
 const selectedSpecs = ref({})
@@ -317,7 +323,7 @@ const handleAddToCart = async () => {
       productId: product.value.id,
       name: product.value.name,
       price: selectedSpec.value.price || product.value.price,
-      image: product.value.images[0],
+      image: product.value.images && product.value.images.length > 0 ? product.value.images[0] : '',
       specs: selectedSpecs.value,
       quantity: quantity.value,
       stock: currentStock.value
@@ -367,6 +373,17 @@ const loadProductDetail = async () => {
     const data = await getProductDetail(productId)
     product.value = data
     console.log('商品数据加载成功:', data)
+    
+    // 记录浏览历史
+    const userId = userStore.userInfo?.id
+    if (userId) {
+      try {
+        await recordBrowsing(userId, productId)
+        console.log('✅ 浏览历史已记录')
+      } catch (error) {
+        console.error('记录浏览历史失败:', error)
+      }
+    }
   } catch (error) {
     console.error('加载商品详情失败:', error)
     ElMessage.error('加载商品详情失败')

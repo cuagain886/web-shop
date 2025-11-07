@@ -305,7 +305,9 @@ const loadProducts = async () => {
   loading.value = true
   try {
     const data = await getProductList()
-    allProducts.value = data.map(p => ({
+    // 后端返回的是分页对象 {records: [], total: 0, ...}
+    const products = data.records || data || []
+    allProducts.value = products.map(p => ({
       ...p,
       categoryName: categories.value.find(c => c.id === p.categoryId)?.name || ''
     }))

@@ -45,44 +45,68 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getUserHistory, deleteHistory, clearHistory } from '@/api/history'
+import { useUserStore } from '@/stores/userStore'
 
 const router = useRouter()
+const userStore = useUserStore()
 const historyList = ref([])
 
-// Mock数据
-const mockHistory = [
-  {
-    id: 1,
-    productId: 1,
-    productName: 'iPhone 15 Pro Max 256GB',
-    price: 9999,
-    image: 'https://via.placeholder.com/100',
-    browsedAt: '2024-03-20 15:30:00'
+const loadHistory = async () => {
+  const userId = userStore.userInfo?.id
+  if (!userId) {
+    console.warn('用户未登录')
+    return
   }
-]
 
-const loadHistory = () => {
-  const saved = localStorage.getItem('browsing_history')
-  historyList.value = saved ? JSON.parse(saved) : mockHistory
+  try {
+    const data = await getUserHistory(userId, 50)
+    // 转换后端数据格式
+    historyList.value = data.map(item => ({
+      id: item.id,
+      productId: item.productId,
+      productName: item.product?.name || '商品名称',
+      price: item.product?.price || 0,
+      image: item.product?.coverImage || '',
+      browsedAt: item.createdAt
+    }))
+    console.log('✅ 浏览历史加载成功:', historyList.value.length)
+  } catch (error) {
+    console.error('加载浏览历史失败:', error)
+  }
 }
 
-const handleRemove = (id) => {
-  historyList.value = historyList.value.filter(item => item.id !== id)
-  localStorage.setItem('browsing_history', JSON.stringify(historyList.value))
-  ElMessage.success('已删除')
+const handleRemove = async (id) => {
+  const userId = userStore.userInfo?.id
+  if (!userId) return
+
+  try {
+    await deleteHistory(id, userId)
+    historyList.value = historyList.value.filter(item => item.id !== id)
+    ElMessage.success('已删除')
+  } catch (error) {
+    console.error('删除失败:', error)
+    ElMessage.error('删除失败')
+  }
 }
 
 const handleClearAll = async () => {
+  const userId = userStore.userInfo?.id
+  if (!userId) return
+
   try {
     await ElMessageBox.confirm('确定要清空所有浏览历史吗？', '提示', {
       type: 'warning'
     })
     
+    await clearHistory(userId)
     historyList.value = []
-    localStorage.setItem('browsing_history', JSON.stringify([]))
     ElMessage.success('已清空浏览历史')
   } catch (error) {
-    // 取消操作
+    if (error !== 'cancel') {
+      console.error('清空失败:', error)
+      ElMessage.error('清空失败')
+    }
   }
 }
 
