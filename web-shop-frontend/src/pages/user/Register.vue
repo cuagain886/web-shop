@@ -217,7 +217,17 @@ const handleRegister = async () => {
 
   } catch (error) {
     console.error('❌ 注册失败:', error)
-    ElMessage.error(error.message || '注册失败，请稍后重试')
+    console.error('错误详情:', JSON.stringify(error, null, 2))
+    
+    // 提取错误信息
+    let errorMsg = '注册失败，请稍后重试'
+    if (error.response?.data?.message) {
+      errorMsg = error.response.data.message
+    } else if (error.message) {
+      errorMsg = error.message
+    }
+    
+    ElMessage.error(errorMsg)
   } finally {
     loading.value = false
   }

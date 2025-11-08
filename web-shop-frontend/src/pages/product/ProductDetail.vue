@@ -352,16 +352,22 @@ const handleBuyNow = () => {
     return
   }
 
-  // TODO: 跳转到订单确认页
-  console.log('立即购买:', {
+  // 构建订单商品数据
+  const orderItem = {
     productId: product.value.id,
     name: product.value.name,
+    price: selectedSpec.value.price || product.value.price,
+    image: product.value.images && product.value.images.length > 0 ? product.value.images[0] : '',
     specs: selectedSpecs.value,
     quantity: quantity.value,
-    price: selectedSpec.value.price || product.value.price
-  })
+    stock: currentStock.value
+  }
 
-  ElMessage.info('即将跳转到订单确认页（功能开发中）')
+  // 将商品信息存储到sessionStorage，供订单确认页使用
+  sessionStorage.setItem('buyNowItem', JSON.stringify(orderItem))
+
+  // 跳转到订单确认页
+  router.push('/checkout')
 }
 
 // 加载商品详情
@@ -371,8 +377,18 @@ const loadProductDetail = async () => {
 
   try {
     const data = await getProductDetail(productId)
-    product.value = data
-    console.log('商品数据加载成功:', data)
+    
+    // 解析images字段
+    let images = []
+    if (data.images) {
+      images = typeof data.images === 'string' ? JSON.parse(data.images) : data.images
+    }
+    
+    product.value = {
+      ...data,
+      images: images
+    }
+    console.log('商品数据加载成功:', product.value)
     
     // 记录浏览历史
     const userId = userStore.userInfo?.id

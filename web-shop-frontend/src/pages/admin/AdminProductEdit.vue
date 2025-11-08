@@ -207,8 +207,8 @@ const productRules = {
  */
 const fetchCategories = async () => {
   try {
-    const list = await getCategoryList({ level: 2 })
-    categories.value = list
+    const response = await getCategoryList({ level: 2 })
+    categories.value = response.data || response
   } catch (error) {
     console.error('获取分类列表失败:', error)
     ElMessage.error('获取分类列表失败')
@@ -220,7 +220,20 @@ const fetchCategories = async () => {
  */
 const fetchProductDetail = async (id) => {
   try {
-    const product = await getAdminProductDetail(id)
+    const response = await getAdminProductDetail(id)
+    const product = response.data || response
+    
+    // 解析images字段（可能是JSON字符串）
+    let images = []
+    if (product.images) {
+      images = typeof product.images === 'string'
+        ? JSON.parse(product.images)
+        : product.images
+    }
+    
+    // 转换status（数字转字符串）
+    const statusMap = { 0: 'inactive', 1: 'active' }
+    const status = statusMap[product.status] || 'pending'
     
     // 回填表单
     Object.assign(productForm, {
@@ -231,13 +244,13 @@ const fetchProductDetail = async (id) => {
       price: product.price,
       originalPrice: product.originalPrice || product.price,
       stock: product.stock,
-      status: product.status,
-      images: product.images || [],
+      status: status,
+      images: images,
       description: product.description || ''
     })
     
     // 回填图片列表
-    imageFileList.value = product.images.map((url, index) => ({
+    imageFileList.value = images.map((url, index) => ({
       uid: Date.now() + index,
       name: `image-${index + 1}`,
       status: 'success',
@@ -309,8 +322,18 @@ const handleSubmit = async () => {
     
     submitting.value = true
     
+    // 转换状态：字符串 -> 数字
+    const statusMap = {
+      'pending': 0,
+      'active': 1,
+      'inactive': 0
+    }
+    
     const data = {
-      ...productForm
+      ...productForm,
+      status: statusMap[productForm.status] || 0,
+      images: JSON.stringify(productForm.images),
+      coverImage: productForm.images[0] || ''
     }
     
     if (isEdit.value) {

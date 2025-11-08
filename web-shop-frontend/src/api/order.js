@@ -465,9 +465,24 @@ export function getAdminOrderList(params = {}) {
   }
   
   return request({
-    url: '/admin/orders',
+    url: '/orders/list',
     method: 'get',
-    params
+    params: {
+      pageNum: params.page,
+      pageSize: params.pageSize,
+      status: params.status,
+      keyword: params.keyword,
+      startTime: params.startDate,
+      endTime: params.endDate
+    }
+  }).then(res => {
+    // 转换后端返回的IPage格式为前端期望的格式
+    return {
+      list: res.records || [],
+      total: res.total || 0,
+      page: res.current || 1,
+      pageSize: res.size || 10
+    }
   })
 }
 
@@ -492,7 +507,7 @@ export function getAdminOrderDetail(id) {
   }
   
   return request({
-    url: `/admin/orders/${id}`,
+    url: `/orders/${id}`,
     method: 'get'
   })
 }
@@ -533,12 +548,12 @@ export function updateOrderStatus(id, data) {
 /**
  * 订单发货（管理端）
  */
-export function shipOrder(id, data) {
+export function shipOrder(orderNo, data) {
   if (MOCK_ENABLED) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
         const orders = getOrdersFromStorage()
-        const order = orders.find(o => o.id === Number(id))
+        const order = orders.find(o => o.orderNo === orderNo)
         
         if (!order) {
           reject(new Error('订单不存在'))
@@ -564,9 +579,12 @@ export function shipOrder(id, data) {
   }
   
   return request({
-    url: `/admin/orders/${id}/ship`,
+    url: `/orders/${orderNo}/ship`,
     method: 'put',
-    data
+    params: {
+      expressCompany: data.expressCompany || '顺丰速运',
+      trackingNo: data.trackingNo
+    }
   })
 }
 

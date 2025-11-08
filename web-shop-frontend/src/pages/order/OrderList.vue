@@ -32,7 +32,7 @@
                 <span class="order-no">订单号：{{ order.orderNo }}</span>
                 <span class="order-time">{{ formatDate(order.createdAt) }}</span>
               </div>
-              <div class="order-status" :class="`status-${order.status}`">
+              <div class="order-status" :class="`status-${getStatusClass(order.status)}`">
                 {{ order.statusText }}
               </div>
             </div>
@@ -62,7 +62,7 @@
               </div>
               <div class="order-actions" @click.stop>
                 <el-button
-                  v-if="order.status === 'pending'"
+                  v-if="order.status === 0"
                   type="danger"
                   size="small"
                   @click="handlePay(order)"
@@ -70,14 +70,14 @@
                   去支付
                 </el-button>
                 <el-button
-                  v-if="order.status === 'pending'"
+                  v-if="order.status === 0"
                   size="small"
                   @click="handleCancel(order.id)"
                 >
                   取消订单
                 </el-button>
                 <el-button
-                  v-if="order.status === 'shipped'"
+                  v-if="order.status === 2"
                   type="success"
                   size="small"
                   @click="handleConfirmReceipt(order.id)"
@@ -119,19 +119,20 @@ const currentStatus = ref('all')
 // 状态映射：前端字符串 -> 后端数字
 const statusMap = {
   'pending': 0,    // 待支付
-  'paid': 1,       // 已支付
-  'processing': 2, // 待发货
-  'shipped': 3,    // 已发货
-  'completed': 4,  // 已完成
-  'cancelled': 5   // 已取消
+  'paid': 1,       // 待发货
+  'processing': 2, // 待收货
+  'completed': 3,  // 已完成
+  'cancelled': 4,  // 已取消
+  'refunding': 5,  // 退款中
+  'refunded': 6    // 已退款
 }
 
 // 状态标签
 const statusTabs = ref([
   { label: '全部', value: 'all', count: 0 },
   { label: '待支付', value: 'pending', count: 0 },
-  { label: '已支付', value: 'paid', count: 0 },
-  { label: '已发货', value: 'shipped', count: 0 },
+  { label: '待发货', value: 'paid', count: 0 },
+  { label: '待收货', value: 'processing', count: 0 },
   { label: '已完成', value: 'completed', count: 0 },
   { label: '已取消', value: 'cancelled', count: 0 }
 ])
@@ -280,6 +281,22 @@ const handleConfirmReceipt = async (orderId) => {
       ElMessage.error(error.message || '确认收货失败')
     }
   }
+}
+
+/**
+ * 获取状态CSS类名
+ */
+const getStatusClass = (status) => {
+  const classMap = {
+    0: 'pending',      // 待支付
+    1: 'paid',         // 待发货
+    2: 'processing',   // 待收货
+    3: 'completed',    // 已完成
+    4: 'cancelled',    // 已取消
+    5: 'refunding',    // 退款中
+    6: 'refunded'      // 已退款
+  }
+  return classMap[status] || 'unknown'
 }
 
 /**
@@ -439,7 +456,7 @@ onMounted(async () => {
   background-color: #e3f2fd;
 }
 
-.status-shipped {
+.status-processing {
   color: #67c23a;
   background-color: #f0f9ff;
 }
@@ -452,6 +469,16 @@ onMounted(async () => {
 .status-cancelled {
   color: #f56c6c;
   background-color: #fef0f0;
+}
+
+.status-refunding {
+  color: #e6a23c;
+  background-color: #fdf6ec;
+}
+
+.status-refunded {
+  color: #909399;
+  background-color: #f5f5f5;
 }
 
 /* 商品列表 */

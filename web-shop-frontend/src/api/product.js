@@ -522,7 +522,7 @@ export function getAdminProductList(params = {}) {
   }
   
   return request({
-    url: '/admin/products',
+    url: '/product/admin/list',
     method: 'get',
     params
   })
@@ -570,7 +570,7 @@ export function addProduct(data) {
   }
   
   return request({
-    url: '/admin/products',
+    url: '/product',
     method: 'post',
     data
   })
@@ -692,10 +692,11 @@ export function updateProductStatus(id, status) {
     })
   }
   
+  // 根据status调用不同的后端接口
+  const endpoint = status === 'active' ? 'on-shelf' : 'off-shelf'
   return request({
-    url: `/admin/products/${id}/status`,
-    method: 'put',
-    data: { status }
+    url: `/product/${id}/${endpoint}`,
+    method: 'put'
   })
 }
 
@@ -735,22 +736,10 @@ export function updateProductStock(id, data) {
  * 上传商品图片（管理端）
  */
 export function uploadProductImage(file) {
-  if (MOCK_ENABLED) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // 模拟图片上传，返回图片URL
-        const mockImageUrl = `https://placehold.co/400x400/409eff/fff?text=${encodeURIComponent(file.name)}`
-        
-        console.log('🛍️ 上传图片成功:', mockImageUrl)
-        resolve({ url: mockImageUrl })
-      }, 1000) // 模拟上传延迟
-    })
-  }
-  
   const formData = new FormData()
   formData.append('file', file)
   return request({
-    url: '/admin/upload/image',
+    url: '/upload/image',
     method: 'post',
     data: formData,
     headers: {

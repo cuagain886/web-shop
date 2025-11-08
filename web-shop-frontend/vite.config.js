@@ -18,11 +18,14 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',  // ✅ 修改为后端端口
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false,  // 如果是https，需要设置为false
-        // ✅ 不重写路径，因为后端接口路径就是 /api/xxx
-        // rewrite: (path) => path.replace(/^\/api/, '')  // 已删除
+        secure: false
+      },
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false
       }
     }
   }

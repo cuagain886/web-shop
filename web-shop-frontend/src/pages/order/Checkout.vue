@@ -154,14 +154,12 @@ const paymentMethod = ref('wechat')
 const showAddressDialog = ref(false)
 const submitting = ref(false)
 
-// 订单商品列表（从购物车获取选中的商品）
-const orderItems = computed(() => {
-  return cartStore.checkedItems
-})
+// 订单商品列表（从购物车或立即购买获取）
+const orderItems = ref([])
 
 // 订单总金额
 const totalAmount = computed(() => {
-  return cartStore.checkedTotalPrice
+  return orderItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
 })
 
 /**
@@ -283,11 +281,37 @@ onMounted(async () => {
     return
   }
 
-  // 检查购物车是否有选中商品
-  if (cartStore.checkedItems.length === 0) {
-    ElMessage.warning('请先选择要结算的商品')
-    router.push('/cart')
-    return
+  // 检查是否是立即购买
+  const buyNowItem = sessionStorage.getItem('buyNowItem')
+  if (buyNowItem) {
+    // 立即购买场景
+    try {
+      const item = JSON.parse(buyNowItem)
+      orderItems.value = [{
+        id: item.productId,
+        productId: item.productId,
+        productName: item.name,
+        image: item.image,
+        specs: JSON.stringify(item.specs),
+        price: item.price,
+        quantity: item.quantity
+      }]
+      // 清除sessionStorage
+      sessionStorage.removeItem('buyNowItem')
+    } catch (error) {
+      console.error('解析立即购买商品失败:', error)
+      ElMessage.error('商品信息错误')
+      router.push('/')
+      return
+    }
+  } else {
+    // 购物车结算场景
+    if (cartStore.checkedItems.length === 0) {
+      ElMessage.warning('请先选择要结算的商品')
+      router.push('/cart')
+      return
+    }
+    orderItems.value = cartStore.checkedItems
   }
 
   // 获取地址列表

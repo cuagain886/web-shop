@@ -15,23 +15,23 @@
           <div class="status-header">
             <h3>订单状态</h3>
             <el-tag :type="getStatusType(order.status)" size="large">
-              {{ order.statusText }}
+              {{ getStatusText(order.status) }}
             </el-tag>
           </div>
           
           <el-steps :active="currentStep" align-center finish-status="success">
-            <el-step title="提交订单" :description="formatDate(order.createdAt)" />
-            <el-step 
-              title="支付成功" 
-              :description="order.paidAt ? formatDate(order.paidAt) : ''" 
+            <el-step title="提交订单" :description="formatDate(order.createdTime)" />
+            <el-step
+              title="支付成功"
+              :description="order.payTime ? formatDate(order.payTime) : ''"
             />
-            <el-step 
-              title="商品发货" 
-              :description="order.shippedAt ? formatDate(order.shippedAt) : ''" 
+            <el-step
+              title="商品发货"
+              :description="order.shipTime ? formatDate(order.shipTime) : ''"
             />
-            <el-step 
-              title="确认收货" 
-              :description="order.completedAt ? formatDate(order.completedAt) : ''" 
+            <el-step
+              title="确认收货"
+              :description="order.receiveTime ? formatDate(order.receiveTime) : ''"
             />
           </el-steps>
         </div>
@@ -41,14 +41,13 @@
           <h3 class="section-title">收货信息</h3>
           <el-descriptions :column="2" border>
             <el-descriptions-item label="收货人">
-              {{ order.address.receiverName }}
+              {{ order.receiverName }}
             </el-descriptions-item>
             <el-descriptions-item label="联系电话">
-              {{ order.address.phone }}
+              {{ order.receiverPhone }}
             </el-descriptions-item>
             <el-descriptions-item label="收货地址" :span="2">
-              {{ order.address.province }} {{ order.address.city }} 
-              {{ order.address.district }} {{ order.address.detail }}
+              {{ order.receiverAddress }}
             </el-descriptions-item>
           </el-descriptions>
         </div>
@@ -60,7 +59,7 @@
             <el-table-column label="商品图片" width="100">
               <template #default="{ row }">
                 <el-image
-                  :src="row.image"
+                  :src="row.productImage"
                   fit="cover"
                   style="width: 60px; height: 60px; border-radius: 4px;"
                 />
@@ -69,18 +68,18 @@
             <el-table-column prop="productName" label="商品名称" min-width="200" />
             <el-table-column label="规格" width="150">
               <template #default="{ row }">
-                {{ row.specs || '-' }}
+                {{ row.specInfo || '-' }}
               </template>
             </el-table-column>
             <el-table-column label="单价" width="120">
               <template #default="{ row }">
-                ¥{{ row.price.toFixed(2) }}
+                ¥{{ Number(row.unitPrice).toFixed(2) }}
               </template>
             </el-table-column>
             <el-table-column prop="quantity" label="数量" width="100" />
             <el-table-column label="小计" width="120">
               <template #default="{ row }">
-                <span class="subtotal">¥{{ (row.price * row.quantity).toFixed(2) }}</span>
+                <span class="subtotal">¥{{ (Number(row.unitPrice) * row.quantity).toFixed(2) }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -94,19 +93,19 @@
               {{ order.orderNo }}
             </el-descriptions-item>
             <el-descriptions-item label="下单时间">
-              {{ formatDate(order.createdAt) }}
+              {{ formatDate(order.createdTime) }}
             </el-descriptions-item>
             <el-descriptions-item label="支付方式">
-              {{ order.paymentMethodText }}
+              {{ getPaymentMethodText(order.paymentMethod) }}
             </el-descriptions-item>
             <el-descriptions-item label="支付时间">
-              {{ order.paidAt ? formatDate(order.paidAt) : '-' }}
+              {{ order.payTime ? formatDate(order.payTime) : '-' }}
             </el-descriptions-item>
             <el-descriptions-item v-if="order.trackingNo" label="物流单号">
               {{ order.trackingNo }}
             </el-descriptions-item>
-            <el-descriptions-item v-if="order.shippedAt" label="发货时间">
-              {{ formatDate(order.shippedAt) }}
+            <el-descriptions-item v-if="order.shipTime" label="发货时间">
+              {{ formatDate(order.shipTime) }}
             </el-descriptions-item>
           </el-descriptions>
         </div>
@@ -115,7 +114,7 @@
         <div class="price-section">
           <div class="price-row">
             <span class="price-label">商品总价：</span>
-            <span class="price-value">¥{{ order.totalAmount.toFixed(2) }}</span>
+            <span class="price-value">¥{{ Number(order.totalAmount).toFixed(2) }}</span>
           </div>
           <div class="price-row">
             <span class="price-label">运费：</span>
@@ -123,7 +122,7 @@
           </div>
           <div class="price-row total-row">
             <span class="price-label">实付款：</span>
-            <span class="price-value total-amount">¥{{ order.totalAmount.toFixed(2) }}</span>
+            <span class="price-value total-amount">¥{{ Number(order.totalAmount).toFixed(2) }}</span>
           </div>
         </div>
 
@@ -136,7 +135,7 @@
               <div class="note-content">{{ note.content }}</div>
             </div>
           </div>
-          <div v-if="order.status === 'completed'" class="add-note">
+          <div v-if="order.status === 3" class="add-note">
             <el-input
               v-model="newNote"
               type="textarea"
@@ -160,7 +159,7 @@
         <!-- 操作按钮 -->
         <div class="action-section">
           <el-button
-            v-if="order.status === 'pending'"
+            v-if="order.status === 0"
             type="danger"
             size="large"
             :loading="cancelling"
@@ -170,7 +169,7 @@
           </el-button>
           
           <el-button
-            v-if="order.status === 'paid'"
+            v-if="order.status === 1"
             type="success"
             size="large"
             @click="shipDialogVisible = true"
@@ -253,11 +252,14 @@ const currentStep = computed(() => {
   if (!order.value) return 0
   
   const statusSteps = {
-    'pending': 1,
-    'paid': 2,
-    'shipped': 3,
-    'completed': 4,
-    'cancelled': 0
+    0: 1,  // 待付款
+    1: 2,  // 待发货
+    2: 3,  // 待收货
+    3: 4,  // 已完成
+    4: 0,  // 已取消
+    5: 0,  // 退款中
+    6: 0,  // 已退款
+    7: 0   // 已退款
   }
   
   return statusSteps[order.value.status] || 0
@@ -287,7 +289,7 @@ const confirmShip = async () => {
     
     shipping.value = true
     
-    await shipOrder(order.value.id, {
+    await shipOrder(order.value.orderNo, {
       trackingNo: shipForm.trackingNo
     })
     
@@ -372,13 +374,44 @@ const goBack = () => {
  */
 const getStatusType = (status) => {
   const typeMap = {
-    pending: 'warning',
-    paid: 'info',
-    shipped: 'primary',
-    completed: 'success',
-    cancelled: 'danger'
+    0: 'warning',  // 待付款
+    1: 'info',     // 待发货
+    2: 'primary',  // 待收货
+    3: 'success',  // 已完成
+    4: 'danger',   // 已取消
+    5: 'warning',  // 退款中
+    6: 'info',     // 已退款
+    7: 'info'      // 已退款
   }
   return typeMap[status] || 'info'
+}
+
+/**
+ * 获取状态文本
+ */
+const getStatusText = (status) => {
+  const textMap = {
+    0: '待付款',
+    1: '待发货',
+    2: '待收货',
+    3: '已完成',
+    4: '已取消',
+    5: '退款中',
+    6: '已退款',
+    7: '已退款'
+  }
+  return textMap[status] || '未知'
+}
+
+/**
+ * 获取支付方式文本
+ */
+const getPaymentMethodText = (method) => {
+  const textMap = {
+    1: '微信支付',
+    2: '支付宝'
+  }
+  return textMap[method] || '-'
 }
 
 /**

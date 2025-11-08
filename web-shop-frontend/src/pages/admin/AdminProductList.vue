@@ -240,8 +240,17 @@ const fetchProducts = async () => {
     }
     
     const result = await getAdminProductList(params)
-    productList.value = result.list
-    pagination.total = result.total
+    // 处理后端返回的IPage格式数据
+    const pageData = result.data || result
+    productList.value = pageData.records || pageData.list || []
+    pagination.total = pageData.total || 0
+    
+    // 处理商品数据：将images JSON字符串转为数组，status数字转为字符串
+    productList.value = productList.value.map(product => ({
+      ...product,
+      images: typeof product.images === 'string' ? JSON.parse(product.images || '[]') : (product.images || []),
+      status: product.status === 1 ? 'active' : product.status === 0 ? 'inactive' : 'pending'
+    }))
   } catch (error) {
     console.error('获取商品列表失败:', error)
     ElMessage.error('获取商品列表失败')

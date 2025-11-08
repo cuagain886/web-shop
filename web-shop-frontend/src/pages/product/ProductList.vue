@@ -307,10 +307,19 @@ const loadProducts = async () => {
     const data = await getProductList()
     // 后端返回的是分页对象 {records: [], total: 0, ...}
     const products = data.records || data || []
-    allProducts.value = products.map(p => ({
-      ...p,
-      categoryName: categories.value.find(c => c.id === p.categoryId)?.name || ''
-    }))
+    allProducts.value = products.map(p => {
+      // 解析images字段
+      let images = []
+      if (p.images) {
+        images = typeof p.images === 'string' ? JSON.parse(p.images) : p.images
+      }
+      return {
+        ...p,
+        images: images,
+        image: images[0] || '', // 取第一张图片作为主图
+        categoryName: categories.value.find(c => c.id === p.categoryId)?.name || ''
+      }
+    })
     console.log('✅ 商品列表加载成功:', allProducts.value.length)
   } catch (error) {
     console.error('❌ 加载商品列表失败:', error)

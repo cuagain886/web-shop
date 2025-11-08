@@ -60,7 +60,8 @@
             @click="goToProductDetail(item.id)"
           >
             <div class="item-img" :style="{ background: item.color }">
-              {{ item.name }}
+              <el-image v-if="item.image" :src="item.image" fit="cover" style="width: 100%; height: 100%;" />
+              <div v-else class="placeholder-text">{{ item.name }}</div>
             </div>
             <div class="item-price">
               <span class="price">¥{{ item.price }}</span>
@@ -86,7 +87,8 @@
             @click="goToProductDetail(item.id)"
           >
             <div class="product-img" :style="{ background: item.color }">
-              {{ item.name }}
+              <el-image v-if="item.image" :src="item.image" fit="cover" style="width: 100%; height: 100%;" />
+              <div v-else class="placeholder-text">{{ item.name }}</div>
             </div>
             <div class="product-info">
               <div class="product-name">{{ item.name }}</div>
@@ -104,8 +106,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { getHotProducts, getRecommendProducts } from '@/api/product'
 
 console.log('🎉 Home页面开始加载')
 
@@ -158,32 +161,65 @@ const banners = ref([
   { id: 4, title: '运动装备大促', desc: '专业运动装备5折起', color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }
 ])
 
-// 秒杀商品
-const seckillProducts = ref([
-  { id: 1, name: 'iPhone 15', price: 5999, originPrice: 7999, color: '#409eff' },
-  { id: 2, name: 'AirPods Pro', price: 1299, originPrice: 1899, color: '#67c23a' },
-  { id: 3, name: 'iPad Air', price: 3999, originPrice: 4999, color: '#e6a23c' },
-  { id: 4, name: 'Apple Watch', price: 2399, originPrice: 3199, color: '#f56c6c' },
-  { id: 5, name: 'MacBook', price: 8999, originPrice: 12999, color: '#909399' }
-])
+// 秒杀商品（热门商品）
+const seckillProducts = ref([])
 
 // 推荐商品
-const recommendProducts = ref([
-  { id: 1, name: 'iPhone 15 Pro Max', desc: 'A17 Pro芯片 钛金属设计', price: 9999, sales: 1000, color: '#409eff' },
-  { id: 2, name: 'MacBook Pro 16', desc: 'M3 Max芯片 专业性能', price: 19999, sales: 500, color: '#67c23a' },
-  { id: 3, name: 'iPad Pro', desc: 'M2芯片 12.9英寸', price: 6999, sales: 800, color: '#e6a23c' },
-  { id: 4, name: 'AirPods Max', desc: '头戴式降噪耳机', price: 4399, sales: 600, color: '#f56c6c' },
-  { id: 5, name: 'Apple Watch Ultra', desc: '专业运动手表', price: 6299, sales: 400, color: '#909399' },
-  { id: 6, name: 'Mac Studio', desc: 'M2 Ultra芯片', price: 14999, sales: 200, color: '#409eff' },
-  { id: 7, name: 'Studio Display', desc: '27英寸5K显示器', price: 11499, sales: 150, color: '#67c23a' },
-  { id: 8, name: 'HomePod', desc: '空间音频 智能音箱', price: 2299, sales: 300, color: '#e6a23c' }
-])
+const recommendProducts = ref([])
 
-console.log('✅ 数据加载完成')
-console.log('📊 分类:', categories.value.length)
-console.log('📊 轮播:', banners.value.length)
-console.log('📊 秒杀:', seckillProducts.value.length)
-console.log('📊 推荐:', recommendProducts.value.length)
+// 获取热门商品
+const fetchHotProducts = async () => {
+  try {
+    const response = await getHotProducts({ limit: 5 })
+    const products = response.data || response
+    seckillProducts.value = products.map(p => {
+      let images = []
+      if (p.images) {
+        images = typeof p.images === 'string' ? JSON.parse(p.images) : p.images
+      }
+      return {
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        originPrice: p.originalPrice || p.price,
+        image: images[0] || '',
+        color: '#409eff'
+      }
+    })
+  } catch (error) {
+    console.error('获取热门商品失败:', error)
+  }
+}
+
+// 获取推荐商品
+const fetchRecommendProducts = async () => {
+  try {
+    const response = await getRecommendProducts({ limit: 8 })
+    const products = response.data || response
+    recommendProducts.value = products.map(p => {
+      let images = []
+      if (p.images) {
+        images = typeof p.images === 'string' ? JSON.parse(p.images) : p.images
+      }
+      return {
+        id: p.id,
+        name: p.name,
+        desc: p.description || '',
+        price: p.price,
+        sales: p.sales,
+        image: images[0] || '',
+        color: '#409eff'
+      }
+    })
+  } catch (error) {
+    console.error('获取推荐商品失败:', error)
+  }
+}
+
+onMounted(() => {
+  fetchHotProducts()
+  fetchRecommendProducts()
+})
 </script>
 
 <style scoped>
@@ -357,10 +393,21 @@ console.log('📊 推荐:', recommendProducts.value.length)
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.item-img .el-image {
+  width: 100%;
+  height: 100%;
+}
+
+.item-img .placeholder-text {
   color: white;
   font-weight: bold;
   font-size: 14px;
   padding: 10px;
+  text-align: center;
 }
 
 .item-price {
@@ -414,6 +461,16 @@ console.log('📊 推荐:', recommendProducts.value.length)
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.product-img .el-image {
+  width: 100%;
+  height: 100%;
+}
+
+.product-img .placeholder-text {
   color: white;
   font-weight: bold;
   font-size: 14px;

@@ -26,12 +26,12 @@
               clearable
               @change="handleSearch"
             >
-              <el-option label="全部" value="all" />
-              <el-option label="待支付" value="pending" />
-              <el-option label="已支付" value="paid" />
-              <el-option label="已发货" value="shipped" />
-              <el-option label="已完成" value="completed" />
-              <el-option label="已取消" value="cancelled" />
+              <el-option label="全部" value="" />
+              <el-option label="待支付" :value="0" />
+              <el-option label="待发货" :value="1" />
+              <el-option label="待收货" :value="2" />
+              <el-option label="已完成" :value="3" />
+              <el-option label="已取消" :value="4" />
             </el-select>
           </el-form-item>
 
@@ -63,30 +63,30 @@
         <!-- 快捷筛选 -->
         <div class="quick-filters">
           <el-button
-            :type="filterForm.status === 'all' ? 'primary' : ''"
+            :type="filterForm.status === '' ? 'primary' : ''"
             size="small"
-            @click="quickFilter('all')"
+            @click="quickFilter('')"
           >
             全部订单
           </el-button>
           <el-button
-            :type="filterForm.status === 'pending' ? 'primary' : ''"
+            :type="filterForm.status === 0 ? 'primary' : ''"
             size="small"
-            @click="quickFilter('pending')"
+            @click="quickFilter(0)"
           >
             待支付
           </el-button>
           <el-button
-            :type="filterForm.status === 'paid' ? 'primary' : ''"
+            :type="filterForm.status === 1 ? 'primary' : ''"
             size="small"
-            @click="quickFilter('paid')"
+            @click="quickFilter(1)"
           >
             待发货
           </el-button>
           <el-button
-            :type="filterForm.status === 'shipped' ? 'primary' : ''"
+            :type="filterForm.status === 2 ? 'primary' : ''"
             size="small"
-            @click="quickFilter('shipped')"
+            @click="quickFilter(2)"
           >
             已发货
           </el-button>
@@ -125,15 +125,15 @@
         <el-table-column label="商品信息" min-width="250">
           <template #default="{ row }">
             <div class="goods-info">
-              <div v-for="(item, index) in row.items.slice(0, 2)" :key="item.id" class="goods-item">
+              <div v-for="(item, index) in (row.items || []).slice(0, 2)" :key="item.id" class="goods-item">
                 <el-image
-                  :src="item.image"
+                  :src="item.productImage || item.image"
                   fit="cover"
                   style="width: 50px; height: 50px; border-radius: 4px; margin-right: 10px;"
                 />
                 <span class="goods-name">{{ item.productName }}</span>
               </div>
-              <div v-if="row.items.length > 2" class="more-goods">
+              <div v-if="(row.items || []).length > 2" class="more-goods">
                 还有{{ row.items.length - 2 }}件商品...
               </div>
             </div>
@@ -142,28 +142,28 @@
 
         <el-table-column label="收货人" width="120">
           <template #default="{ row }">
-            <div>{{ row.address.receiverName }}</div>
-            <div class="sub-text">{{ row.address.phone }}</div>
+            <div>{{ row.receiverName }}</div>
+            <div class="sub-text">{{ row.receiverPhone }}</div>
           </template>
         </el-table-column>
 
         <el-table-column label="金额" width="120">
           <template #default="{ row }">
-            <div class="price-cell">¥{{ row.totalAmount.toFixed(2) }}</div>
+            <div class="price-cell">¥{{ Number(row.totalAmount).toFixed(2) }}</div>
           </template>
         </el-table-column>
 
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
-              {{ row.statusText }}
+              {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
 
         <el-table-column label="下单时间" width="160">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            {{ formatDate(row.createdTime) }}
           </template>
         </el-table-column>
 
@@ -174,7 +174,7 @@
             </el-button>
             
             <el-button
-              v-if="row.status === 'paid'"
+              v-if="row.status === 1"
               text
               type="success"
               @click="handleShipOrder(row)"
@@ -183,7 +183,7 @@
             </el-button>
             
             <el-popconfirm
-              v-if="row.status === 'pending'"
+              v-if="row.status === 0"
               title="确定要取消该订单吗？"
               @confirm="handleCancelOrder(row.id)"
             >
@@ -269,7 +269,7 @@ const shipFormRef = ref(null)
 
 const filterForm = reactive({
   keyword: '',
-  status: 'all'
+  status: ''
 })
 
 const pagination = reactive({
@@ -299,7 +299,7 @@ const fetchOrders = async () => {
       page: pagination.page,
       pageSize: pagination.pageSize,
       keyword: filterForm.keyword || undefined,
-      status: filterForm.status === 'all' ? undefined : filterForm.status,
+      status: filterForm.status === '' ? undefined : filterForm.status,
       startDate: dateRange.value && dateRange.value[0] ? dateRange.value[0] : undefined,
       endDate: dateRange.value && dateRange.value[1] ? dateRange.value[1] : undefined
     }
@@ -328,7 +328,7 @@ const handleSearch = () => {
  */
 const handleReset = () => {
   filterForm.keyword = ''
-  filterForm.status = 'all'
+  filterForm.status = ''
   dateRange.value = []
   pagination.page = 1
   fetchOrders()
@@ -488,13 +488,32 @@ const handleExportAll = () => {
  */
 const getStatusType = (status) => {
   const typeMap = {
-    pending: 'warning',
-    paid: 'info',
-    shipped: 'primary',
-    completed: 'success',
-    cancelled: 'danger'
+    0: 'warning',  // 待付款
+    1: 'info',     // 待发货
+    2: 'primary',  // 待收货
+    3: 'success',  // 已完成
+    4: 'danger',   // 已取消
+    5: 'warning',  // 退款中
+    6: 'info'      // 已退款
   }
   return typeMap[status] || 'info'
+}
+
+/**
+ * 获取状态文本
+ */
+const getStatusText = (status) => {
+  const textMap = {
+    0: '待付款',
+    1: '待发货',
+    2: '待收货',
+    3: '已完成',
+    4: '已取消',
+    5: '退款中',
+    6: '已退款',
+    7: '已退款'
+  }
+  return textMap[status] || '未知'
 }
 
 /**
