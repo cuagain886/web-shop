@@ -60,21 +60,6 @@
           </el-form-item>
         </el-form>
 
-        <!-- 提示信息 -->
-        <div class="login-tips">
-          <el-alert
-            title="测试账号"
-            type="info"
-            :closable="false"
-            show-icon
-          >
-            <template #default>
-              <p>商家账号：admin / 密码：123456</p>
-              <p>商家账号：merchant / 密码：123456</p>
-            </template>
-          </el-alert>
-        </div>
-
         <!-- 返回用户端 -->
         <div class="back-to-user">
           <el-button text @click="goToUserSite">

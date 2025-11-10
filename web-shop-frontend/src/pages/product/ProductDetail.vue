@@ -384,9 +384,27 @@ const loadProductDetail = async () => {
       images = typeof data.images === 'string' ? JSON.parse(data.images) : data.images
     }
     
+    // 解析specs字段并转换为UI需要的格式
+    let specs = []
+    if (data.specs) {
+      const specsData = typeof data.specs === 'string' ? JSON.parse(data.specs) : data.specs
+      // 转换格式：[{name: '颜色', values: ['黑色', '白色']}]
+      // => [{name: '颜色', options: [{label: '黑色', value: '黑色', stock: 100}, ...]}]
+      specs = specsData.map(spec => ({
+        name: spec.name,
+        options: spec.values.map(value => ({
+          label: value,
+          value: value,
+          stock: data.stock, // 使用商品总库存，实际应该每个规格有独立库存
+          price: data.price  // 使用商品价格，实际应该每个规格有独立价格
+        }))
+      }))
+    }
+    
     product.value = {
       ...data,
-      images: images
+      images: images,
+      specs: specs
     }
     console.log('商品数据加载成功:', product.value)
     

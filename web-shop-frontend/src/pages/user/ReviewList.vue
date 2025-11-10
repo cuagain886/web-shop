@@ -86,6 +86,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useOrderStore } from '@/stores/orderStore'
+import { useUserStore } from '@/stores/userStore'
 
 const activeTab = ref('pending')
 const pendingReviews = ref([])
@@ -93,14 +95,13 @@ const reviewedList = ref([])
 const reviewDialogVisible = ref(false)
 const currentProduct = ref(null)
 
+const orderStore = useOrderStore()
+const userStore = useUserStore()
+
 const reviewForm = reactive({
   rating: 5,
   content: ''
 })
-
-// Mock数据
-const mockPendingReviews = []
-const mockReviewedList = []
 
 const handleReview = (item) => {
   currentProduct.value = item
@@ -129,9 +130,46 @@ const handleSubmitReview = () => {
   pendingReviews.value = pendingReviews.value.filter(item => item.id !== currentProduct.value.id)
 }
 
+/**
+ * 加载待评价商品
+ */
+const loadPendingReviews = async () => {
+  try {
+    const userId = userStore.userInfo?.id
+    if (!userId) {
+      return
+    }
+
+    // 获取已完成的订单
+    await orderStore.fetchOrderList({ userId, page: 1, pageSize: 100 })
+    
+    // 筛选出已完成的订单（status === 3）
+    const completedOrders = orderStore.orderList.filter(order => order.status === 3)
+    
+    // 提取所有待评价的商品
+    const items = []
+    completedOrders.forEach(order => {
+      order.items.forEach(item => {
+        items.push({
+          id: `${order.id}_${item.id}`,
+          orderId: order.id,
+          orderNo: order.orderNo,
+          productId: item.productId,
+          productName: item.productName,
+          image: item.image,
+          specs: item.specs
+        })
+      })
+    })
+    
+    pendingReviews.value = items
+  } catch (error) {
+    console.error('加载待评价商品失败:', error)
+  }
+}
+
 onMounted(() => {
-  pendingReviews.value = mockPendingReviews
-  reviewedList.value = mockReviewedList
+  loadPendingReviews()
 })
 </script>
 

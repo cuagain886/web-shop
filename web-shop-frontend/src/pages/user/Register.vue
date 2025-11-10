@@ -32,6 +32,16 @@
             />
           </el-form-item>
 
+          <el-form-item prop="email">
+            <el-input
+              v-model="registerForm.email"
+              placeholder="请输入邮箱"
+              prefix-icon="Message"
+              size="large"
+              clearable
+            />
+          </el-form-item>
+
           <el-form-item prop="password">
             <el-input
               v-model="registerForm.password"
@@ -92,18 +102,6 @@
           </el-form-item>
         </el-form>
 
-        <!-- Mock提示 -->
-        <div class="mock-tip">
-          <el-alert
-            title="注册说明"
-            type="info"
-            :closable="false"
-          >
-            <template #default>
-              <p>当前为演示版本，注册成功后请使用测试账号登录</p>
-            </template>
-          </el-alert>
-        </div>
       </div>
     </div>
   </div>
@@ -128,6 +126,7 @@ const registerFormRef = ref(null)
 const registerForm = reactive({
   username: '',
   phone: '',
+  email: '',
   password: '',
   confirmPassword: '',
   agreement: false
@@ -177,6 +176,10 @@ const registerRules = {
   phone: [
     { required: true, validator: validatePhone, trigger: 'blur' }
   ],
+  email: [
+    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+  ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度在 6 到 20 个字符', trigger: 'blur' }
@@ -204,6 +207,7 @@ const handleRegister = async () => {
     await userStore.register({
       username: registerForm.username,
       phone: registerForm.phone,
+      email: registerForm.email,
       password: registerForm.password
     })
 

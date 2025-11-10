@@ -201,21 +201,56 @@
         <div v-if="activeMenu === 'orders'" class="orders-section">
           <el-card>
             <template #header>
-              <h3>我的订单</h3>
+              <div class="card-header">
+                <h3>我的订单</h3>
+                <el-button text type="primary" @click="$router.push('/orders')">
+                  查看完整列表 <el-icon><ArrowRight /></el-icon>
+                </el-button>
+              </div>
             </template>
-            <el-alert
-              title="订单功能"
-              type="info"
-              :closable="false"
-              show-icon
-            >
-              请点击顶部导航栏的"我的订单"查看完整订单列表
-            </el-alert>
-            <div style="margin-top: 20px; text-align: center;">
-              <el-button type="primary" @click="$router.push('/orders')">
-                前往订单列表
-              </el-button>
+            <div v-if="allOrders.length > 0">
+              <div v-for="order in allOrders" :key="order.id" class="order-item">
+                <div class="order-header">
+                  <span class="order-no">订单号：{{ order.orderNo }}</span>
+                  <el-tag :type="getOrderStatusType(order.status)" size="small">
+                    {{ order.statusText }}
+                  </el-tag>
+                </div>
+                <div class="order-content">
+                  <div class="order-products">
+                    <div v-for="item in order.items.slice(0, 3)" :key="item.id" class="product-item">
+                      <el-image
+                        :src="item.image"
+                        fit="cover"
+                        style="width: 60px; height: 60px; border-radius: 4px;"
+                      >
+                        <template #error>
+                          <div class="image-slot">
+                            <el-icon><Picture /></el-icon>
+                          </div>
+                        </template>
+                      </el-image>
+                    </div>
+                    <span v-if="order.items.length > 3" class="more-products">
+                      等{{ order.items.length }}件商品
+                    </span>
+                  </div>
+                  <div class="order-amount">¥{{ (order.totalAmount || 0).toFixed(2) }}</div>
+                  <div class="order-actions">
+                    <el-button v-if="order.status === 0" type="primary" size="small">
+                      立即支付
+                    </el-button>
+                    <el-button v-if="order.status === 2" type="success" size="small">
+                      确认收货
+                    </el-button>
+                    <el-button size="small" @click="goToOrderDetail(order.id)">
+                      查看详情
+                    </el-button>
+                  </div>
+                </div>
+              </div>
             </div>
+            <el-empty v-else description="暂无订单" />
           </el-card>
         </div>
 
@@ -265,10 +300,11 @@ import {
   Box,
   Edit,
   Service,
-  ArrowRight
+  ArrowRight,
+  Picture
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
-import { getOrderList } from '@/api/order'
+import { useOrderStore } from '@/stores/orderStore'
 import AddressManage from './AddressManage.vue'
 import FavoriteList from './FavoriteList.vue'
 import BrowsingHistory from './BrowsingHistory.vue'
@@ -278,9 +314,11 @@ import SecuritySettings from './SecuritySettings.vue'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const orderStore = useOrderStore()
 
 const activeMenu = ref('overview')
 const recentOrders = ref([])
+const allOrders = ref([])
 
 const userInfo = computed(() => userStore.userInfo)
 
@@ -369,15 +407,17 @@ const loadRecentOrders = async () => {
       return
     }
 
-    const result = await getOrderList({ userId, page: 1, pageSize: 3 })
-    recentOrders.value = result.records || []
-
+    // 使用orderStore加载订单，这样会经过数据转换
+    await orderStore.fetchOrderList({ userId, page: 1, pageSize: 100 })
+    
+    // 从orderStore获取转换后的订单数据
+    allOrders.value = orderStore.orderList
+    recentOrders.value = orderStore.orderList.slice(0, 3)
+    
     // 统计待办事项
-    const allOrders = await getOrderList({ userId, page: 1, pageSize: 100 })
-    const orders = allOrders.records || []
-    todoStats.pendingPay = orders.filter(o => o.status === 0).length
-    todoStats.pendingReceive = orders.filter(o => o.status === 3).length
-    todoStats.pendingReview = orders.filter(o => o.status === 4 && !o.reviewed).length
+    todoStats.pendingPay = allOrders.value.filter(o => o.status === 0).length
+    todoStats.pendingReceive = allOrders.value.filter(o => o.status === 2).length
+    todoStats.pendingReview = allOrders.value.filter(o => o.status === 3).length
   } catch (error) {
     console.error('加载订单失败:', error)
   }
@@ -614,6 +654,17 @@ onMounted(() => {
 .order-actions {
   display: flex;
   gap: 10px;
+}
+
+.image-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: #f5f7fa;
+  color: #909399;
+  font-size: 24px;
 }
 </style>
 

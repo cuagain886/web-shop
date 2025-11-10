@@ -20,12 +20,12 @@
       <!-- 订单列表 -->
       <div v-loading="loading" class="order-list">
         <template v-if="displayOrders.length > 0">
-          <div
-            v-for="order in displayOrders"
-            :key="order.id"
-            class="order-card"
-            @click="goToOrderDetail(order.id)"
-          >
+          <template v-for="order in displayOrders" :key="order?.id || Math.random()">
+            <div
+              v-if="order"
+              class="order-card"
+              @click="goToOrderDetail(order.id)"
+            >
             <!-- 订单头部 -->
             <div class="order-header">
               <div class="order-info">
@@ -44,13 +44,13 @@
                 :key="item.id"
                 class="goods-item"
               >
-                <img :src="item.image" :alt="item.productName" class="goods-image" />
+                <img :src="item.image || 'https://via.placeholder.com/80'" :alt="item.productName" class="goods-image" />
                 <div class="goods-info">
                   <div class="goods-name">{{ item.productName }}</div>
                   <div class="goods-specs" v-if="item.specs">{{ item.specs }}</div>
                   <div class="goods-quantity">x{{ item.quantity }}</div>
                 </div>
-                <div class="goods-price">¥{{ item.price.toFixed(2) }}</div>
+                <div class="goods-price">¥{{ (item.price || 0).toFixed(2) }}</div>
               </div>
             </div>
 
@@ -58,7 +58,7 @@
             <div class="order-footer">
               <div class="order-total">
                 <span>订单总额：</span>
-                <span class="total-amount">¥{{ order.totalAmount.toFixed(2) }}</span>
+                <span class="total-amount">¥{{ (order.totalAmount || 0).toFixed(2) }}</span>
               </div>
               <div class="order-actions" @click.stop>
                 <el-button
@@ -92,7 +92,8 @@
                 </el-button>
               </div>
             </div>
-          </div>
+            </div>
+          </template>
         </template>
 
         <el-empty v-else description="暂无订单" />
@@ -140,11 +141,11 @@ const statusTabs = ref([
 // 显示的订单列表（根据状态筛选）
 const displayOrders = computed(() => {
   if (currentStatus.value === 'all') {
-    return orderStore.orderList
+    return orderStore.orderList.filter(order => order != null)
   }
   // 后端返回的是数字状态，需要转换
   const statusCode = statusMap[currentStatus.value]
-  return orderStore.orderList.filter(order => order.status === statusCode)
+  return orderStore.orderList.filter(order => order != null && order.status === statusCode)
 })
 
 /**

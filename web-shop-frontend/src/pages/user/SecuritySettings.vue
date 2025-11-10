@@ -50,6 +50,20 @@
         </el-form>
       </el-tab-pane>
 
+      <!-- 账户注销 -->
+      <el-tab-pane label="账户注销" name="deleteAccount">
+        <el-alert
+          title="警告"
+          type="warning"
+          description="注销账户后，您的所有数据将被永久删除且无法恢复，请谨慎操作！"
+          :closable="false"
+          style="margin: 20px 0;"
+        />
+        <el-button type="danger" :loading="deleting" @click="handleDeleteAccount">
+          注销账户
+        </el-button>
+      </el-tab-pane>
+
       <!-- 登录记录 -->
       <el-tab-pane label="登录记录" name="loginHistory">
         <el-table :data="loginHistory" style="width: 100%; margin-top: 20px;">
@@ -70,13 +84,17 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/userStore'
+import { deleteAccount } from '@/api/user'
 
+const router = useRouter()
 const userStore = useUserStore()
 
 const activeTab = ref('password')
 const changing = ref(false)
+const deleting = ref(false)
 const passwordFormRef = ref(null)
 
 const passwordForm = reactive({
@@ -166,6 +184,34 @@ const resetPasswordForm = () => {
   passwordForm.newPassword = ''
   passwordForm.confirmPassword = ''
   passwordFormRef.value?.clearValidate()
+}
+
+const handleDeleteAccount = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要注销账户吗？此操作不可恢复！',
+      '确认注销',
+      {
+        confirmButtonText: '确定注销',
+        cancelButtonText: '取消',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
+    deleting.value = true
+    await deleteAccount(userStore.userInfo.id)
+    
+    ElMessage.success('账户已注销')
+    userStore.logout()
+    router.push('/login')
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '注销失败')
+    }
+  } finally {
+    deleting.value = false
+  }
 }
 </script>
 

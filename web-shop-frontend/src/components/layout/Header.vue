@@ -78,9 +78,14 @@ const cartCount = computed(() => cartStore.cartCount)
 
 // 处理搜索
 const handleSearch = () => {
-  if (searchText.value.trim()) {
-    console.log('搜索:', searchText.value)
-    ElMessage.info('搜索功能开发中')
+  const keyword = searchText.value.trim()
+  if (keyword) {
+    console.log('搜索:', keyword)
+    router.push({
+      path: '/products',
+      query: { keyword }
+    })
+    searchText.value = ''
   }
 }
 

@@ -108,7 +108,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getHotProducts, getRecommendProducts } from '@/api/product'
+import { getFlashSaleProducts, getRecommendProducts } from '@/api/product'
 
 console.log('🎉 Home页面开始加载')
 
@@ -167,10 +167,10 @@ const seckillProducts = ref([])
 // 推荐商品
 const recommendProducts = ref([])
 
-// 获取热门商品
-const fetchHotProducts = async () => {
+// 获取秒杀商品
+const fetchFlashSaleProducts = async () => {
   try {
-    const response = await getHotProducts({ limit: 5 })
+    const response = await getFlashSaleProducts({ limit: 5 })
     const products = response.data || response
     seckillProducts.value = products.map(p => {
       let images = []
@@ -187,7 +187,7 @@ const fetchHotProducts = async () => {
       }
     })
   } catch (error) {
-    console.error('获取热门商品失败:', error)
+    console.error('获取秒杀商品失败:', error)
   }
 }
 
@@ -217,7 +217,7 @@ const fetchRecommendProducts = async () => {
 }
 
 onMounted(() => {
-  fetchHotProducts()
+  fetchFlashSaleProducts()
   fetchRecommendProducts()
 })
 </script>

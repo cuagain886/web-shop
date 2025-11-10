@@ -15,11 +15,11 @@
         <div v-if="selectedAddress" class="address-card">
           <div class="address-info">
             <span class="receiver-name">{{ selectedAddress.receiverName }}</span>
-            <span class="receiver-phone">{{ selectedAddress.phone }}</span>
+            <span class="receiver-phone">{{ selectedAddress.receiverPhone }}</span>
             <el-tag v-if="selectedAddress.isDefault" type="success" size="small">默认</el-tag>
           </div>
           <div class="address-detail">
-            {{ selectedAddress.province }} {{ selectedAddress.city }} {{ selectedAddress.district }} {{ selectedAddress.detail }}
+            {{ selectedAddress.province }} {{ selectedAddress.city }} {{ selectedAddress.district }} {{ selectedAddress.detailAddress }}
           </div>
         </div>
 
@@ -105,21 +105,28 @@
       title="选择收货地址"
       width="600px"
     >
+      <div class="address-dialog-header">
+        <el-button type="primary" size="small" @click="showAddAddressForm">
+          <el-icon><Plus /></el-icon>
+          新增地址
+        </el-button>
+      </div>
+
       <div class="address-list">
         <div
           v-for="addr in addressList"
           :key="addr.id"
           class="address-item"
-          :class="{ selected: selectedAddress?.id === addr.id }"
+          :class="{ selected: tempSelectedAddress?.id === addr.id }"
           @click="selectAddress(addr)"
         >
           <div class="address-item-header">
             <span class="receiver-name">{{ addr.receiverName }}</span>
-            <span class="receiver-phone">{{ addr.phone }}</span>
+            <span class="receiver-phone">{{ addr.receiverPhone }}</span>
             <el-tag v-if="addr.isDefault" type="success" size="small">默认</el-tag>
           </div>
           <div class="address-item-detail">
-            {{ addr.province }} {{ addr.city }} {{ addr.district }} {{ addr.detail }}
+            {{ addr.province }} {{ addr.city }} {{ addr.district }} {{ addr.detailAddress }}
           </div>
         </div>
       </div>
@@ -129,17 +136,70 @@
         <el-button type="primary" @click="confirmAddress">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 新增地址对话框 -->
+    <el-dialog
+      v-model="showAddDialog"
+      title="新增收货地址"
+      width="500px"
+    >
+      <el-form
+        ref="addressFormRef"
+        :model="addressForm"
+        :rules="addressRules"
+        label-width="100px"
+      >
+        <el-form-item label="收货人" prop="receiverName">
+          <el-input v-model="addressForm.receiverName" placeholder="请输入收货人姓名" />
+        </el-form-item>
+
+        <el-form-item label="手机号码" prop="receiverPhone">
+          <el-input v-model="addressForm.receiverPhone" placeholder="请输入手机号码" />
+        </el-form-item>
+
+        <el-form-item label="省份" prop="province">
+          <el-input v-model="addressForm.province" placeholder="请输入省份" />
+        </el-form-item>
+
+        <el-form-item label="城市" prop="city">
+          <el-input v-model="addressForm.city" placeholder="请输入城市" />
+        </el-form-item>
+
+        <el-form-item label="区/县" prop="district">
+          <el-input v-model="addressForm.district" placeholder="请输入区/县" />
+        </el-form-item>
+
+        <el-form-item label="详细地址" prop="detailAddress">
+          <el-input
+            v-model="addressForm.detailAddress"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入详细地址"
+          />
+        </el-form-item>
+
+        <el-form-item label="设为默认">
+          <el-switch v-model="addressForm.isDefault" />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="showAddDialog = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="handleAddAddress">保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { useCartStore } from '@/stores/cartStore'
 import { useOrderStore } from '@/stores/orderStore'
 import { useUserStore } from '@/stores/userStore'
-import { getAddressList, getDefaultAddress } from '@/api/address'
+import { getAddressList, addAddress } from '@/api/address'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -152,7 +212,10 @@ const selectedAddress = ref(null)
 const tempSelectedAddress = ref(null)
 const paymentMethod = ref('wechat')
 const showAddressDialog = ref(false)
+const showAddDialog = ref(false)
 const submitting = ref(false)
+const saving = ref(false)
+const addressFormRef = ref(null)
 
 // 订单商品列表（从购物车或立即购买获取）
 const orderItems = ref([])
@@ -161,6 +224,30 @@ const orderItems = ref([])
 const totalAmount = computed(() => {
   return orderItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
 })
+
+// 新增地址表单
+const addressForm = reactive({
+  receiverName: '',
+  receiverPhone: '',
+  province: '',
+  city: '',
+  district: '',
+  detailAddress: '',
+  isDefault: false
+})
+
+// 表单验证规则
+const addressRules = {
+  receiverName: [{ required: true, message: '请输入收货人姓名', trigger: 'blur' }],
+  receiverPhone: [
+    { required: true, message: '请输入手机号码', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+  ],
+  province: [{ required: true, message: '请输入省份', trigger: 'blur' }],
+  city: [{ required: true, message: '请输入城市', trigger: 'blur' }],
+  district: [{ required: true, message: '请输入区/县', trigger: 'blur' }],
+  detailAddress: [{ required: true, message: '请输入详细地址', trigger: 'blur' }]
+}
 
 /**
  * 获取地址列表
@@ -202,6 +289,60 @@ const confirmAddress = () => {
 }
 
 /**
+ * 显示新增地址表单
+ */
+const showAddAddressForm = () => {
+  // 重置表单
+  Object.assign(addressForm, {
+    receiverName: '',
+    receiverPhone: '',
+    province: '',
+    city: '',
+    district: '',
+    detailAddress: '',
+    isDefault: false
+  })
+  showAddDialog.value = true
+}
+
+/**
+ * 新增地址
+ */
+const handleAddAddress = async () => {
+  try {
+    await addressFormRef.value.validate()
+    
+    saving.value = true
+    
+    const userId = userStore.userInfo?.id || userStore.userInfo?.userId
+    const newAddress = await addAddress({
+      ...addressForm,
+      userId,
+      isDefault: addressForm.isDefault ? 1 : 0
+    })
+    
+    ElMessage.success('地址添加成功')
+    showAddDialog.value = false
+    
+    // 刷新地址列表
+    await fetchAddressList()
+    
+    // 自动选择新添加的地址
+    if (newAddress) {
+      selectedAddress.value = newAddress
+      tempSelectedAddress.value = newAddress
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('添加地址失败:', error)
+      ElMessage.error('添加地址失败')
+    }
+  } finally {
+    saving.value = false
+  }
+}
+
+/**
  * 提交订单
  */
 const handleSubmitOrder = async () => {
@@ -227,26 +368,17 @@ const handleSubmitOrder = async () => {
 
     submitting.value = true
 
+    const userId = userStore.userInfo?.id || userStore.userInfo?.userId
+    
     // 准备订单数据
     const orderData = {
+      userId,
+      addressId: selectedAddress.value.id,
       items: orderItems.value.map(item => ({
         productId: item.productId,
-        productName: item.productName,
-        image: item.image,
-        specs: item.specs,
-        price: item.price,
         quantity: item.quantity
       })),
-      totalAmount: totalAmount.value,
-      address: {
-        receiverName: selectedAddress.value.receiverName,
-        phone: selectedAddress.value.phone,
-        province: selectedAddress.value.province,
-        city: selectedAddress.value.city,
-        district: selectedAddress.value.district,
-        detail: selectedAddress.value.detail
-      },
-      paymentMethod: paymentMethod.value
+      note: ''
     }
 
     // 创建订单
@@ -584,6 +716,12 @@ onMounted(async () => {
 .address-item-detail {
   color: #666;
   font-size: 14px;
+}
+
+.address-dialog-header {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
 

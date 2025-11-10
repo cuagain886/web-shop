@@ -381,7 +381,7 @@ const confirmShip = async () => {
     
     shipping.value = true
     
-    await shipOrder(currentOrder.value.id, {
+    await shipOrder(currentOrder.value.orderNo, {
       trackingNo: shipForm.trackingNo
     })
     

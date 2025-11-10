@@ -65,23 +65,6 @@
           </el-form-item>
         </el-form>
 
-        <!-- Mock账号提示 -->
-        <div class="mock-tip">
-          <el-alert
-            title="测试账号"
-            type="info"
-            :closable="false"
-            show-icon
-          >
-            <template #default>
-              <div class="mock-accounts">
-                <p>账号1: test / 123456</p>
-                <p>账号2: user001 / 123456</p>
-              </div>
-            </template>
-          </el-alert>
-        </div>
-
         <!-- 商家登录入口 -->
         <div class="merchant-login-link">
           <el-button text type="primary" @click="goToMerchantLogin">

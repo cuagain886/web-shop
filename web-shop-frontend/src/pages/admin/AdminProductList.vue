@@ -142,6 +142,24 @@
           </template>
         </el-table-column>
 
+        <el-table-column label="推荐" width="80" align="center">
+          <template #default="{ row }">
+            <el-switch
+              :model-value="row.isRecommend === 1"
+              @change="handleToggleRecommend(row.id, $event)"
+            />
+          </template>
+        </el-table-column>
+
+        <el-table-column label="秒杀" width="80" align="center">
+          <template #default="{ row }">
+            <el-switch
+              :model-value="row.isFlashSale === 1"
+              @change="handleToggleFlashSale(row.id, $event)"
+            />
+          </template>
+        </el-table-column>
+
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button text type="primary" @click="goToEditProduct(row.id)">
@@ -199,7 +217,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus, Search, RefreshRight } from '@element-plus/icons-vue'
-import { getAdminProductList, deleteProduct, updateProductStatus, batchDeleteProducts } from '@/api/product'
+import { getAdminProductList, deleteProduct, updateProductStatus, batchDeleteProducts, updateProductRecommend, updateProductFlashSale } from '@/api/product'
 import { getCategoryList } from '@/api/category'
 import { useUserStore } from '@/stores/userStore'
 import { recordLog, OperationType } from '@/utils/operationLog'
@@ -470,6 +488,34 @@ const getStatusText = (status) => {
     pending: '待上架'
   }
   return textMap[status] || '未知'
+}
+
+/**
+ * 切换推荐状态
+ */
+const handleToggleRecommend = async (id, value) => {
+  try {
+    await updateProductRecommend(id, value ? 1 : 0)
+    ElMessage.success(`${value ? '已设为' : '已取消'}推荐`)
+    fetchProducts()
+  } catch (error) {
+    console.error('更新推荐状态失败:', error)
+    ElMessage.error('操作失败')
+  }
+}
+
+/**
+ * 切换秒杀状态
+ */
+const handleToggleFlashSale = async (id, value) => {
+  try {
+    await updateProductFlashSale(id, value ? 1 : 0)
+    ElMessage.success(`${value ? '已设为' : '已取消'}秒杀`)
+    fetchProducts()
+  } catch (error) {
+    console.error('更新秒杀状态失败:', error)
+    ElMessage.error('操作失败')
+  }
 }
 
 onMounted(() => {

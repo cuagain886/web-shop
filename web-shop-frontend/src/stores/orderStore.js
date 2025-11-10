@@ -12,6 +12,7 @@ import {
   payOrder as payOrderApi,
   confirmReceipt as confirmReceiptApi
 } from '@/api/order'
+import { useUserStore } from './userStore'
 
 // 订单状态映射
 const STATUS_MAP = {
@@ -42,6 +43,7 @@ const transformOrder = (order) => {
     payAmount: order.payAmount,
     freight: order.freight,
     paymentMethod: order.paymentMethod,
+    paymentMethodText: order.paymentMethod === 1 ? '微信支付' : order.paymentMethod === 2 ? '支付宝' : '未知',
     receiverName: order.receiverName,
     receiverPhone: order.receiverPhone,
     receiverAddress: order.receiverAddress,
@@ -49,20 +51,29 @@ const transformOrder = (order) => {
     trackingNo: order.trackingNo,
     note: order.note,
     createdAt: order.createdTime,
-    payTime: order.payTime,
-    shipTime: order.shipTime,
-    receiveTime: order.receiveTime,
+    paidAt: order.payTime,
+    shippedAt: order.shipTime,
+    completedAt: order.receiveTime,
     cancelTime: order.cancelTime,
     cancelReason: order.cancelReason,
+    // 构建地址对象
+    address: {
+      receiverName: order.receiverName,
+      phone: order.receiverPhone,
+      province: '',
+      city: '',
+      district: '',
+      detail: order.receiverAddress
+    },
     // 转换订单项
     items: (order.items || []).map(item => ({
       id: item.id,
       orderId: item.orderId,
       productId: item.productId,
       productName: item.productName,
-      image: item.productImage,
-      specs: item.specInfo,
-      price: item.unitPrice,
+      image: item.productImage || item.image,
+      specs: item.specInfo || item.specs,
+      price: item.unitPrice || item.price,
       quantity: item.quantity
     }))
   }
@@ -144,8 +155,19 @@ export const useOrderStore = defineStore('order', () => {
   const payOrder = async (orderId, paymentData) => {
     try {
       loading.value = true
-      const order = await payOrderApi(orderId, paymentData)
-      const transformedOrder = transformOrder(order)
+      
+      // 先找到订单获取orderNo
+      const order = orderList.value.find(o => o.id === orderId) || currentOrder.value
+      if (!order) {
+        throw new Error('订单不存在')
+      }
+      
+      const userStore = useUserStore()
+      const userId = userStore.userInfo?.id || userStore.userInfo?.userId
+      const paymentMethod = paymentData?.paymentMethod || 1
+      
+      const updatedOrder = await payOrderApi(order.orderNo, userId, paymentMethod)
+      const transformedOrder = transformOrder(updatedOrder)
       
       // 更新列表中的订单状态
       const index = orderList.value.findIndex(o => o.id === orderId)
@@ -173,8 +195,18 @@ export const useOrderStore = defineStore('order', () => {
   const cancelOrder = async (orderId) => {
     try {
       loading.value = true
-      const order = await cancelOrderApi(orderId)
-      const transformedOrder = transformOrder(order)
+      
+      // 先找到订单获取orderNo
+      const order = orderList.value.find(o => o.id === orderId) || currentOrder.value
+      if (!order) {
+        throw new Error('订单不存在')
+      }
+      
+      const userStore = useUserStore()
+      const userId = userStore.userInfo?.id || userStore.userInfo?.userId
+      
+      const updatedOrder = await cancelOrderApi(order.orderNo, userId, '用户取消')
+      const transformedOrder = transformOrder(updatedOrder)
       
       // 更新列表中的订单状态
       const index = orderList.value.findIndex(o => o.id === orderId)
@@ -202,8 +234,18 @@ export const useOrderStore = defineStore('order', () => {
   const confirmReceipt = async (orderId) => {
     try {
       loading.value = true
-      const order = await confirmReceiptApi(orderId)
-      const transformedOrder = transformOrder(order)
+      
+      // 先找到订单获取orderNo
+      const order = orderList.value.find(o => o.id === orderId) || currentOrder.value
+      if (!order) {
+        throw new Error('订单不存在')
+      }
+      
+      const userStore = useUserStore()
+      const userId = userStore.userInfo?.id || userStore.userInfo?.userId
+      
+      const updatedOrder = await confirmReceiptApi(order.orderNo, userId)
+      const transformedOrder = transformOrder(updatedOrder)
       
       // 更新列表中的订单状态
       const index = orderList.value.findIndex(o => o.id === orderId)
