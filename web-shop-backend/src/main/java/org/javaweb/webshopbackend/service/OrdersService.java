@@ -29,6 +29,17 @@ public interface OrdersService extends IService<Orders> {
     Orders createOrder(Long userId, Long addressId, List<Long> cartItemIds, String note);
 
     /**
+     * 从商品列表创建订单（直接购买）
+     *
+     * @param userId 用户ID
+     * @param addressId 地址ID
+     * @param items 商品列表
+     * @param note 订单备注
+     * @return 创建的订单
+     */
+    Orders createOrderFromItems(Long userId, Long addressId, List<org.javaweb.webshopbackend.pojo.dto.OrderCreateDTO.OrderItemDTO> items, String note);
+
+    /**
      * 分页查询用户订单
      * 
      * @param page 分页对象

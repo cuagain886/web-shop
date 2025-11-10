@@ -233,5 +233,20 @@ public class UserController {
 
         return Result.success("用户已删除");
     }
+
+    /**
+     * 注销账户
+     */
+    @DeleteMapping("/{userId}/account")
+    @Operation(summary = "注销账户", description = "用户注销自己的账户（物理删除）")
+    public Result<Void> deleteAccount(
+            @Parameter(description = "用户ID", required = true, example = "1")
+            @PathVariable Long userId) {
+        log.info("注销账户：userId={}", userId);
+
+        userService.deleteAccount(userId);
+
+        return Result.success("账户已注销");
+    }
 }
 

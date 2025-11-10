@@ -66,6 +66,14 @@ public interface ProductService extends IService<Product> {
     List<Product> getRecommendProducts(Integer limit);
 
     /**
+     * 获取秒杀商品
+     *
+     * @param limit 数量限制
+     * @return 秒杀商品列表
+     */
+    List<Product> getFlashSaleProducts(Integer limit);
+
+    /**
      * 新增商品
      * 
      * @param product 商品信息
@@ -142,5 +150,21 @@ public interface ProductService extends IService<Product> {
      * @return true-库存充足，false-库存不足
      */
     boolean checkStock(Long productId, Integer quantity);
+
+    /**
+     * 更新商品推荐状态
+     *
+     * @param productId 商品ID
+     * @param isRecommend 是否推荐（0-否，1-是）
+     */
+    void updateRecommendStatus(Long productId, Integer isRecommend);
+
+    /**
+     * 更新商品秒杀状态
+     *
+     * @param productId 商品ID
+     * @param isFlashSale 是否秒杀（0-否，1-是）
+     */
+    void updateFlashSaleStatus(Long productId, Integer isFlashSale);
 }
 

@@ -1,5 +1,6 @@
 package org.javaweb.webshopbackend.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.mapper.ProductCategoryMapper;
@@ -108,6 +109,23 @@ public class ProductCategoryServiceImpl extends ServiceImpl<ProductCategoryMappe
         }
 
         return true;
+    }
+
+    @Override
+    public List<ProductCategory> getCategoriesByLevel(Integer level) {
+        log.info("根据层级获取分类列表：level={}", level);
+        
+        if (level == null) {
+            return this.list();
+        } else if (level == 1) {
+            return getRootCategories();
+        } else if (level == 2) {
+            QueryWrapper<ProductCategory> wrapper = new QueryWrapper<>();
+            wrapper.ne("parent_id", 0);
+            return this.list(wrapper);
+        }
+        
+        return this.list();
     }
 }
 

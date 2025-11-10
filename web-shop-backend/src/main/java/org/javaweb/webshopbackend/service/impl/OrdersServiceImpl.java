@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.mapper.OrdersMapper;
+import org.javaweb.webshopbackend.pojo.dto.OrderCreateDTO;
 import org.javaweb.webshopbackend.pojo.entity.*;
 import org.javaweb.webshopbackend.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     @Autowired
     private UserAddressService userAddressService;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private EmailService emailService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Orders createOrder(Long userId, Long addressId, List<Long> cartItemIds, String note) {
@@ -53,7 +60,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         // 2. 查询购物车项
         List<ShoppingCart> cartItems = shoppingCartService.listByIds(cartItemIds);
-        if (cartItems.isEmpty()) {
+        if (cartItems == null || cartItems.isEmpty()) {
             throw new IllegalArgumentException("购物车为空");
         }
 
@@ -83,12 +90,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         order.setOrderNo(generateOrderNo());
         order.setUserId(userId);
         order.setTotalAmount(totalAmount);
-        order.setPayAmount(totalAmount);  // 暂不考虑优惠
-        order.setFreight(BigDecimal.ZERO);  // 暂不收运费
-        order.setStatus(0);  // 待付款
+        order.setPayAmount(totalAmount);
+        order.setFreight(BigDecimal.ZERO);
+        order.setStatus(0);
         order.setReceiverName(address.getReceiverName());
         order.setReceiverPhone(address.getReceiverPhone());
-        order.setReceiverAddress(address.getProvince() + address.getCity() + 
+        order.setReceiverAddress(address.getProvince() + address.getCity() +
                                 address.getDistrict() + address.getDetailAddress());
         order.setNote(note);
         this.save(order);
@@ -97,7 +104,6 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         for (ShoppingCart cartItem : cartItems) {
             Product product = productService.getById(cartItem.getProductId());
 
-            // 创建订单项
             OrderItem orderItem = new OrderItem();
             orderItem.setOrderId(order.getId());
             orderItem.setProductId(product.getId());
@@ -110,12 +116,74 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             orderItem.setIsReviewed(0);
             orderItemService.save(orderItem);
 
-            // 减库存
             productService.updateProductStock(product.getId(), -cartItem.getQuantity());
         }
 
         // 6. 清除购物车
         shoppingCartService.removeCarts(cartItemIds);
+
+        log.info("订单创建成功：orderNo={}, totalAmount={}", order.getOrderNo(), totalAmount);
+        return order;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Orders createOrderFromItems(Long userId, Long addressId, List<OrderCreateDTO.OrderItemDTO> items, String note) {
+        log.info("从商品列表创建订单：userId={}, addressId={}, items={}", userId, addressId, items.size());
+
+        // 1. 查询收货地址
+        UserAddress address = userAddressService.getById(addressId);
+        if (address == null || !address.getUserId().equals(userId)) {
+            throw new IllegalArgumentException("收货地址不存在");
+        }
+
+        // 2. 检查库存并计算总金额
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (OrderCreateDTO.OrderItemDTO item : items) {
+            Product product = productService.getById(item.getProductId());
+            if (product == null || product.getStatus() == 0) {
+                throw new IllegalArgumentException("商品不存在或已下架");
+            }
+            if (!productService.checkStock(product.getId(), item.getQuantity())) {
+                throw new IllegalArgumentException("商品 " + product.getName() + " 库存不足");
+            }
+            BigDecimal itemTotal = product.getPrice().multiply(new BigDecimal(item.getQuantity()));
+            totalAmount = totalAmount.add(itemTotal);
+        }
+
+        // 3. 创建订单
+        Orders order = new Orders();
+        order.setOrderNo(generateOrderNo());
+        order.setUserId(userId);
+        order.setTotalAmount(totalAmount);
+        order.setPayAmount(totalAmount);
+        order.setFreight(BigDecimal.ZERO);
+        order.setStatus(0);
+        order.setReceiverName(address.getReceiverName());
+        order.setReceiverPhone(address.getReceiverPhone());
+        order.setReceiverAddress(address.getProvince() + address.getCity() +
+                                address.getDistrict() + address.getDetailAddress());
+        order.setNote(note);
+        this.save(order);
+
+        // 4. 创建订单项并减库存
+        for (OrderCreateDTO.OrderItemDTO item : items) {
+            Product product = productService.getById(item.getProductId());
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrderId(order.getId());
+            orderItem.setProductId(product.getId());
+            orderItem.setProductName(product.getName());
+            orderItem.setProductImage(product.getCoverImage());
+            orderItem.setSpecInfo("");
+            orderItem.setUnitPrice(product.getPrice());
+            orderItem.setQuantity(item.getQuantity());
+            orderItem.setTotalPrice(product.getPrice().multiply(new BigDecimal(item.getQuantity())));
+            orderItem.setIsReviewed(0);
+            orderItemService.save(orderItem);
+
+            productService.updateProductStock(product.getId(), -item.getQuantity());
+        }
 
         log.info("订单创建成功：orderNo={}, totalAmount={}", order.getOrderNo(), totalAmount);
         return order;
@@ -274,6 +342,12 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         order.setTrackingNo(trackingNo);
         order.setShipTime(LocalDateTime.now());
         this.updateById(order);
+
+        // 4. 发送邮件通知
+        User user = userService.getById(order.getUserId());
+        if (user != null && user.getEmail() != null && !user.getEmail().isEmpty()) {
+            emailService.sendShipmentNotification(user.getEmail(), orderNo, expressCompany, trackingNo);
+        }
 
         log.info("订单发货成功：orderNo={}", orderNo);
     }

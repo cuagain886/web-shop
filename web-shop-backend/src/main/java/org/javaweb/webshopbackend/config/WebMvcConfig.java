@@ -22,7 +22,8 @@ import java.util.TimeZone;
  * @date 2025-11-02
  */
 @Configuration
-public class WebMvcConfig implements WebMvcConfigurer {
+public class
+WebMvcConfig implements WebMvcConfigurer {
 
     /**
      * 配置静态资源映射

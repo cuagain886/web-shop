@@ -115,6 +115,35 @@
         LIMIT #{limit}
     </select>
 
+    <!-- 查询秒杀商品 -->
+    <select id="selectFlashSaleProducts" resultType="org.javaweb.webshopbackend.pojo.entity.Product">
+        SELECT
+            id,
+            name,
+            category_id,
+            price,
+            original_price,
+            stock,
+            sales,
+            cover_image,
+            images,
+            description,
+            specs,
+            status,
+            is_hot,
+            is_recommend,
+            is_flash_sale,
+            deleted,
+            created_time,
+            updated_time
+        FROM `product`
+        WHERE deleted = 0
+        AND status = 1
+        AND is_flash_sale = 1
+        ORDER BY sales DESC
+        LIMIT #{limit}
+    </select>
+
     <!-- 更新商品销量 -->
     <update id="updateSales">
         UPDATE `product`

@@ -69,6 +69,21 @@ public class ProductCategoryController {
     }
 
     /**
+     * 获取分类列表（支持按层级筛选）
+     */
+    @GetMapping("/list")
+    @Operation(summary = "获取分类列表", description = "获取分类列表，支持按层级筛选")
+    public Result<List<ProductCategory>> getCategoryList(
+            @Parameter(description = "层级（1-一级分类，2-二级分类）", example = "2")
+            @RequestParam(required = false) Integer level) {
+        log.info("获取分类列表：level={}", level);
+
+        List<ProductCategory> categories = categoryService.getCategoriesByLevel(level);
+
+        return Result.success(categories);
+    }
+
+    /**
      * 新增分类
      */
     @PostMapping

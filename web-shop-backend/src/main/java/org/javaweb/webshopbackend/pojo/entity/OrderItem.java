@@ -37,6 +37,11 @@ public class OrderItem implements Serializable {
     private Long productId;
 
     /**
+     * 关联SKU ID（可选）
+     */
+    private Long skuId;
+
+    /**
      * 商品名称（冗余）
      */
     private String productName;

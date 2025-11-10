@@ -37,14 +37,28 @@ public class OrdersController {
     @PostMapping
     @Operation(summary = "创建订单", description = "用户创建新订单")
     public Result<Orders> createOrder(@RequestBody OrderCreateDTO orderDTO) {
-        log.info("创建订单：userId={}", orderDTO.getUserId());
+        log.info("创建订单：userId={}, addressId={}", orderDTO.getUserId(), orderDTO.getAddressId());
 
-        Orders order = ordersService.createOrder(
-                orderDTO.getUserId(),
-                orderDTO.getAddressId(),
-                orderDTO.getCartItemIds(),
-                orderDTO.getNote()
-        );
+        Orders order;
+        if (orderDTO.getCartItemIds() != null && !orderDTO.getCartItemIds().isEmpty()) {
+            // 从购物车创建订单
+            order = ordersService.createOrder(
+                    orderDTO.getUserId(),
+                    orderDTO.getAddressId(),
+                    orderDTO.getCartItemIds(),
+                    orderDTO.getNote()
+            );
+        } else if (orderDTO.getItems() != null && !orderDTO.getItems().isEmpty()) {
+            // 直接购买创建订单
+            order = ordersService.createOrderFromItems(
+                    orderDTO.getUserId(),
+                    orderDTO.getAddressId(),
+                    orderDTO.getItems(),
+                    orderDTO.getNote()
+            );
+        } else {
+            throw new IllegalArgumentException("订单商品不能为空");
+        }
 
         return Result.success("订单创建成功", order);
     }

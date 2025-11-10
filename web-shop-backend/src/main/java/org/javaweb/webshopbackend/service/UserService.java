@@ -85,5 +85,12 @@ public interface UserService extends IService<User> {
      * @return 用户信息
      */
     User getUserByUsername(String username);
+
+    /**
+     * 注销账户（物理删除）
+     *
+     * @param userId 用户ID
+     */
+    void deleteAccount(Long userId);
 }
 

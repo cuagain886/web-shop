@@ -63,5 +63,13 @@ public interface ProductCategoryService extends IService<ProductCategory> {
      * @return true-可以删除，false-不可删除
      */
     boolean canDelete(Long categoryId);
+
+    /**
+     * 根据层级获取分类列表
+     *
+     * @param level 层级（1-一级分类，2-二级分类，null-所有分类）
+     * @return 分类列表
+     */
+    List<ProductCategory> getCategoriesByLevel(Integer level);
 }
 

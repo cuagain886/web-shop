@@ -49,6 +49,14 @@ public interface ProductMapper extends BaseMapper<Product> {
     List<Product> selectRecommendProducts(@Param("limit") Integer limit);
 
     /**
+     * 查询秒杀商品
+     *
+     * @param limit 数量限制
+     * @return 秒杀商品列表
+     */
+    List<Product> selectFlashSaleProducts(@Param("limit") Integer limit);
+
+    /**
      * 更新商品销量
      * 
      * @param productId 商品ID

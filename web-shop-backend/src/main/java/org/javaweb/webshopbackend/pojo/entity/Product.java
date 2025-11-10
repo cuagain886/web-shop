@@ -91,6 +91,11 @@ public class Product implements Serializable {
     private Integer isRecommend;
 
     /**
+     * 是否限时秒杀（0-否，1-是）
+     */
+    private Integer isFlashSale;
+
+    /**
      * 逻辑删除（0-未删除，1-已删除）
      */
     @TableLogic

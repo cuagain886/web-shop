@@ -94,6 +94,13 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     }
 
     @Override
+    public List<Product> getFlashSaleProducts(Integer limit) {
+        log.info("获取秒杀商品：limit={}", limit);
+
+        return baseMapper.selectFlashSaleProducts(limit);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public Product addProduct(Product product) {
         log.info("新增商品：name={}", product.getName());
@@ -211,6 +218,28 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
             return false;
         }
         return product.getStock() >= quantity;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateRecommendStatus(Long productId, Integer isRecommend) {
+        log.info("更新商品推荐状态：productId={}, isRecommend={}", productId, isRecommend);
+        Product product = new Product();
+        product.setId(productId);
+        product.setIsRecommend(isRecommend);
+        this.updateById(product);
+        log.info("商品推荐状态更新成功");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateFlashSaleStatus(Long productId, Integer isFlashSale) {
+        log.info("更新商品秒杀状态：productId={}, isFlashSale={}", productId, isFlashSale);
+        Product product = new Product();
+        product.setId(productId);
+        product.setIsFlashSale(isFlashSale);
+        this.updateById(product);
+        log.info("商品秒杀状态更新成功");
     }
 }
 

@@ -197,5 +197,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         return user;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAccount(Long userId) {
+        log.info("注销账户：userId={}", userId);
+
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("用户不存在");
+        }
+
+        // 物理删除用户
+        this.removeById(userId);
+
+        log.info("账户注销成功：userId={}", userId);
+    }
 }
 
