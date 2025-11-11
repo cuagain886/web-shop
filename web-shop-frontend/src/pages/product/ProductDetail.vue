@@ -112,24 +112,33 @@
 
             <!-- 操作按钮 -->
             <div class="action-box">
-              <el-button 
-                type="danger" 
-                size="large" 
+              <el-button
+                type="danger"
+                size="large"
                 class="buy-btn"
                 :disabled="currentStock === 0 || !allSpecsSelected"
                 @click="handleBuyNow"
               >
                 立即购买
               </el-button>
-              <el-button 
-                type="warning" 
-                size="large" 
+              <el-button
+                type="warning"
+                size="large"
                 class="cart-btn"
                 :disabled="currentStock === 0 || !allSpecsSelected"
                 @click="handleAddToCart"
               >
                 <el-icon><ShoppingCart /></el-icon>
                 加入购物车
+              </el-button>
+              <el-button
+                :type="isFavorited ? 'danger' : 'default'"
+                size="large"
+                class="favorite-btn"
+                @click="handleToggleFavorite"
+              >
+                <el-icon><Star :style="{ color: isFavorited ? '#e4393c' : '#999' }" /></el-icon>
+                {{ isFavorited ? '已收藏' : '收藏' }}
               </el-button>
             </div>
 
@@ -215,8 +224,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ShoppingCart, Select, Van, RefreshRight } from '@element-plus/icons-vue'
-import { getProductDetail } from '@/api/product'
+import { ShoppingCart, Select, Van, RefreshRight, Star } from '@element-plus/icons-vue'
+import { getProductDetail, addFavorite, removeFavorite, checkFavorite } from '@/api/product'
 import { recordBrowsing } from '@/api/history'
 import { useCartStore } from '@/stores/cartStore'
 import { useUserStore } from '@/stores/userStore'
@@ -269,28 +278,26 @@ const quantity = ref(1)
 // 当前标签页
 const activeTab = ref('detail')
 
+// 收藏状态
+const isFavorited = ref(false)
+
 // 当前库存
 const currentStock = computed(() => {
   // 如果已选择完整的规格，显示该SKU的库存
   if (allSpecsSelected.value && selectedSpec.value.stock !== undefined) {
-    console.log('📊 currentStock: 使用SKU库存', selectedSpec.value.stock, '选中的规格:', selectedSpecs.value)
-    return selectedSpec.value.stock
+    return selectedSpec.value.stock || 0
   }
   // 否则显示商品总库存
-  console.log('📊 currentStock: 使用商品总库存', product.value.stock)
   return product.value.stock || 0
 })
 
 // 库存显示文本
 const stockDisplayText = computed(() => {
-  if (allSpecsSelected.value && selectedSpec.value.stock !== undefined) {
-    const text = `${selectedSpec.value.stock} 件（该规格库存）`
-    console.log('📝 库存显示文本:', text)
-    return text
+  const stock = currentStock.value
+  if (allSpecsSelected.value) {
+    return `${stock} 件`
   }
-  const text = `${product.value.stock || 0} 件（总库存）`
-  console.log('📝 库存显示文本:', text)
-  return text
+  return `${stock} 件`
 })
 
 // 检查是否选择了所有规格
@@ -314,47 +321,49 @@ const isSpecSelected = (specName, value) => {
 
 // 选择规格
 const selectSpec = (specName, value, option) => {
-   console.log('🔍 选择规格前的option对象:', option)
-   console.log('🔍 option.stock:', option.stock)
+   // 如果没有SKU数据，允许选择但使用商品总库存
+   const hasSkuData = product.value.skus && product.value.skus.length > 0
    
-   if (!option.stock || option.stock === 0) {
+   if (hasSkuData && (!option.stock || option.stock === 0)) {
      ElMessage.warning('该规格暂无库存')
      return
    }
 
    selectedSpecs.value[specName] = value
    
-   // 如果所有规格都已选择，查找对应的SKU
+   // 如果所有规格都已选择
    if (allSpecsSelected.value) {
-     const sku = findSkuBySpecs(selectedSpecs.value)
-     if (sku) {
-       console.log('✅ 找到对应的SKU:', sku)
-       selectedSpec.value = {
-         stock: sku.stock,
-         price: sku.price,
-         skuId: sku.id,
-         skuCode: sku.skuCode
+     if (hasSkuData) {
+       const sku = findSkuBySpecs(selectedSpecs.value)
+       if (sku) {
+         selectedSpec.value = {
+           stock: sku.stock,
+           price: sku.price,
+           skuId: sku.id,
+           skuCode: sku.skuCode
+         }
+       } else {
+         selectedSpec.value = {
+           stock: option.stock || product.value.stock,
+           price: option.price || product.value.price,
+           skuId: option.skus && option.skus.length > 0 ? option.skus[0].id : null
+         }
        }
      } else {
-       console.log('⚠️ 未找到对应的SKU，使用选项的库存')
-       // 使用选项的总库存和第一个SKU的ID
+       // 没有SKU数据，使用商品总库存
        selectedSpec.value = {
-         stock: option.stock || 0,
-         price: option.price || product.value.price,
-         skuId: option.skus && option.skus.length > 0 ? option.skus[0].id : null
+         stock: product.value.stock,
+         price: product.value.price,
+         skuId: null
        }
      }
    } else {
-     // 规格未完全选择，使用选项的总库存和第一个SKU的ID
      selectedSpec.value = {
-       stock: option.stock || 0,
+       stock: hasSkuData ? (option.stock || 0) : product.value.stock,
        price: option.price || product.value.price,
        skuId: option.skus && option.skus.length > 0 ? option.skus[0].id : null
      }
    }
-   
-   console.log('✅ 选择规格后的selectedSpec.value:', selectedSpec.value)
-   console.log('✅ currentStock计算值:', currentStock.value)
 }
 
 // 根据规格查找对应的SKU
@@ -555,8 +564,79 @@ const loadProductDetail = async () => {
   }
 }
 
+// 检查收藏状态
+const checkFavoriteStatus = async () => {
+  const productId = route.params.id
+  const userId = userStore.userInfo?.id
+  
+  if (!userId) {
+    console.log('用户未登录，跳过收藏状态检查')
+    return
+  }
+
+  try {
+    const result = await checkFavorite(productId)
+    isFavorited.value = result.isFavorited || false
+    console.log('✅ 收藏状态检查完成:', isFavorited.value)
+  } catch (error) {
+    console.error('检查收藏状态失败:', error)
+  }
+}
+
+// 添加收藏
+const handleAddFavorite = async () => {
+  const userId = userStore.userInfo?.id
+  
+  if (!userId) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+
+  try {
+    await addFavorite(product.value.id)
+    isFavorited.value = true
+    ElMessage.success('已添加到收藏')
+    console.log('✅ 添加收藏成功')
+  } catch (error) {
+    console.error('添加收藏失败:', error)
+    ElMessage.error('添加收藏失败')
+  }
+}
+
+// 取消收藏
+const handleRemoveFavorite = async () => {
+  const userId = userStore.userInfo?.id
+  
+  if (!userId) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+
+  try {
+    await removeFavorite(product.value.id)
+    isFavorited.value = false
+    ElMessage.success('已取消收藏')
+    console.log('✅ 取消收藏成功')
+  } catch (error) {
+    console.error('取消收藏失败:', error)
+    ElMessage.error('取消收藏失败')
+  }
+}
+
+// 切换收藏状态
+const handleToggleFavorite = async () => {
+  if (isFavorited.value) {
+    await handleRemoveFavorite()
+  } else {
+    await handleAddFavorite()
+  }
+}
+
 onMounted(() => {
   loadProductDetail()
+  checkFavoriteStatus()
 })
 </script>
 
@@ -830,10 +910,19 @@ onMounted(() => {
 }
 
 .buy-btn,
-.cart-btn {
-  flex: 1;
+.cart-btn,
+.favorite-btn {
   height: 50px;
   font-size: 16px;
+}
+
+.buy-btn,
+.cart-btn {
+  flex: 1;
+}
+
+.favorite-btn {
+  min-width: 120px;
 }
 
 .tips {

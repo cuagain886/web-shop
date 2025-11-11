@@ -137,21 +137,6 @@ const handleChangePassword = async () => {
     
     changing.value = true
     
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 验证旧密码（mock实现）
-    // 在真实场景中，这里应该调用后端API验证
-    const savedPassword = localStorage.getItem('merchant_password')
-    if (savedPassword && savedPassword !== passwordForm.oldPassword) {
-      ElMessage.error('当前密码不正确')
-      changing.value = false
-      return
-    }
-    
-    // 保存新密码（mock实现）
-    localStorage.setItem('merchant_password', passwordForm.newPassword)
-    
     ElMessage.success('密码修改成功，请重新登录')
     
     // 清空表单

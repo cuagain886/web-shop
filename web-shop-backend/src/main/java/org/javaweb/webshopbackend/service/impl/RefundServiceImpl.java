@@ -6,15 +6,20 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.mapper.RefundMapper;
+import org.javaweb.webshopbackend.pojo.entity.OrderItem;
 import org.javaweb.webshopbackend.pojo.entity.Orders;
 import org.javaweb.webshopbackend.pojo.entity.Refund;
+import org.javaweb.webshopbackend.service.OrderItemService;
 import org.javaweb.webshopbackend.service.OrdersService;
+import org.javaweb.webshopbackend.service.ProductService;
+import org.javaweb.webshopbackend.service.ProductSkuService;
 import org.javaweb.webshopbackend.service.RefundService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 退款 Service 实现类
@@ -28,6 +33,15 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
 
     @Autowired
     private OrdersService ordersService;
+
+    @Autowired
+    private OrderItemService orderItemService;
+
+    @Autowired
+    private ProductService productService;
+
+    @Autowired
+    private ProductSkuService productSkuService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -63,12 +77,13 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
             throw new IllegalArgumentException("该订单已存在退款申请");
         }
 
-        // 5. 设置默认值
+        // 5. 生成退款单号并设置默认值
+        refund.setRefundNo("RF" + System.currentTimeMillis());
         refund.setStatus(0); // 待审核
         this.save(refund);
 
         // 6. 更新订单状态为退款中
-        order.setStatus(6); // 退款中
+        order.setStatus(5); // 退款中
         ordersService.updateById(order);
 
         log.info("退款申请提交成功：refundId={}", refund.getId());
@@ -102,9 +117,10 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
 
         // 5. 更新订单状态
         if (status == 1) {
-            // 同意退款
+            // 同意退款，还原库存
+            restoreStock(refund.getOrderId());
             order.setStatus(7); // 已退款
-            log.info("退款申请已同意，订单状态更新为已退款");
+            log.info("退款申请已同意，订单状态更新为已退款，库存已还原");
         } else {
             // 拒绝退款，需要根据支付时间和发货时间判断应该恢复到什么状态
             if (order.getShipTime() != null) {
@@ -214,6 +230,33 @@ public class RefundServiceImpl extends ServiceImpl<RefundMapper, Refund> impleme
         // 这里可以添加实际的退款处理逻辑，比如调用支付接口
         
         log.info("退款完成");
+    }
+
+    /**
+     * 还原订单库存
+     */
+    private void restoreStock(Long orderId) {
+        List<OrderItem> items = orderItemService.getByOrderId(orderId);
+        for (OrderItem item : items) {
+            if (item.getSkuId() != null) {
+                productSkuService.updateStock(item.getSkuId(), item.getQuantity());
+                log.info("还原SKU库存：skuId={}, quantity={}", item.getSkuId(), item.getQuantity());
+            }
+            productService.updateProductStock(item.getProductId(), item.getQuantity());
+            log.info("还原商品库存：productId={}, quantity={}", item.getProductId(), item.getQuantity());
+        }
+    }
+
+    @Override
+    public Refund getRefundByOrderId(Long orderId) {
+        log.info("根据订单ID获取退款信息：orderId={}", orderId);
+        
+        LambdaQueryWrapper<Refund> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Refund::getOrderId, orderId)
+               .orderByDesc(Refund::getCreatedTime)
+               .last("LIMIT 1");
+        
+        return this.getOne(wrapper);
     }
 }
 

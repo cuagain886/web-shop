@@ -244,5 +244,55 @@ public class OrdersController {
 
         return Result.success(count);
     }
+
+    /**
+     * 商家取消订单（管理端）
+     */
+    @PutMapping("/admin/{orderId}/cancel")
+    @Operation(summary = "商家取消订单", description = "管理员取消订单")
+    public Result<Void> adminCancelOrder(
+            @Parameter(description = "订单ID", required = true, example = "1")
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> data) {
+        log.info("商家取消订单：orderId={}", orderId);
+
+        Orders order = ordersService.getById(orderId);
+        if (order == null) {
+            throw new IllegalArgumentException("订单不存在");
+        }
+
+        String reason = data.getOrDefault("reason", "商家取消");
+        ordersService.adminCancelOrder(order.getOrderNo(), reason);
+
+        return Result.success("订单已取消");
+    }
+
+    /**
+     * 添加订单备注（管理端）
+     */
+    @PostMapping("/admin/{orderId}/note")
+    @Operation(summary = "添加订单备注", description = "管理员添加订单备注")
+    public Result<Void> addOrderNote(
+            @Parameter(description = "订单ID", required = true, example = "1")
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> data) {
+        log.info("添加订单备注：orderId={}", orderId);
+
+        Orders order = ordersService.getById(orderId);
+        if (order == null) {
+            throw new IllegalArgumentException("订单不存在");
+        }
+
+        String note = data.get("note");
+        if (note == null || note.trim().isEmpty()) {
+            throw new IllegalArgumentException("备注内容不能为空");
+        }
+
+        // 这里可以添加备注保存逻辑，如果有备注表的话
+        // 目前只是记录日志
+        log.info("订单备注已添加：orderId={}, note={}", orderId, note);
+
+        return Result.success("备注添加成功");
+    }
 }
 

@@ -131,7 +131,7 @@
         <!-- 操作按钮 -->
         <div class="action-section">
           <el-button
-            v-if="order.status === 'pending'"
+            v-if="order.status === 0"
             type="danger"
             size="large"
             :loading="paying"
@@ -140,7 +140,7 @@
             立即支付
           </el-button>
           <el-button
-            v-if="order.status === 'pending'"
+            v-if="order.status === 0"
             size="large"
             :loading="cancelling"
             @click="handleCancel"
@@ -148,13 +148,22 @@
             取消订单
           </el-button>
           <el-button
-            v-if="order.status === 'shipped'"
+            v-if="order.status === 2"
             type="success"
             size="large"
             :loading="confirming"
             @click="handleConfirmReceipt"
           >
             确认收货
+          </el-button>
+          <el-button
+            v-if="order.status === 1 || order.status === 2 || order.status === 3"
+            type="warning"
+            size="large"
+            :loading="refunding"
+            @click="handleRefund"
+          >
+            申请退款
           </el-button>
         </div>
       </div>
@@ -171,6 +180,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useOrderStore } from '@/stores/orderStore'
+import { applyRefund } from '@/api/order'
 
 const route = useRoute()
 const router = useRouter()
@@ -181,17 +191,20 @@ const order = ref(null)
 const paying = ref(false)
 const cancelling = ref(false)
 const confirming = ref(false)
+const refunding = ref(false)
 
 // 当前步骤（根据订单状态计算）
 const currentStep = computed(() => {
   if (!order.value) return 0
   
   const statusSteps = {
-    'pending': 1,
-    'paid': 2,
-    'shipped': 3,
-    'completed': 4,
-    'cancelled': 0
+    0: 1,  // 待支付
+    1: 2,  // 待发货(已支付)
+    2: 3,  // 待收货(已发货)
+    3: 4,  // 已完成
+    4: 0,  // 已取消
+    5: 2,  // 退款中
+    6: 2   // 已退款
   }
   
   return statusSteps[order.value.status] || 0
@@ -293,6 +306,38 @@ const handleConfirmReceipt = async () => {
     }
   } finally {
     confirming.value = false
+  }
+}
+
+/**
+ * 申请退款
+ */
+const handleRefund = async () => {
+  try {
+    const { value: reason } = await ElMessageBox.prompt('请输入退款原因', '申请退款', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPattern: /.+/,
+      inputErrorMessage: '请输入退款原因'
+    })
+
+    refunding.value = true
+    
+    await applyRefund({
+      orderId: order.value.id,
+      refundAmount: order.value.totalAmount,
+      reason: reason
+    })
+    
+    ElMessage.success('退款申请已提交，请等待审核')
+    await fetchOrderDetail()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('申请退款失败:', error)
+      ElMessage.error(error.message || '申请退款失败')
+    }
+  } finally {
+    refunding.value = false
   }
 }
 
@@ -538,4 +583,3 @@ onMounted(() => {
   padding: 30px 20px;
 }
 </style>
-

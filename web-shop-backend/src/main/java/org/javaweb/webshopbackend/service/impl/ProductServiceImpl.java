@@ -202,13 +202,20 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
     public void updateSkuStock(Long skuId, Integer quantity) {
         log.info("更新SKU库存（增量）：skuId={}, quantity={}", skuId, quantity);
 
+        if (skuId == null) {
+            log.warn("SKU ID为空，跳过SKU库存更新");
+            return;
+        }
+
         ProductSku sku = productSkuService.getById(skuId);
         if (sku != null) {
-            sku.setStock(sku.getStock() + quantity);
+            int newStock = sku.getStock() + quantity;
+            log.info("SKU库存更新：原库存={}, 变化量={}, 新库存={}", sku.getStock(), quantity, newStock);
+            sku.setStock(newStock);
             productSkuService.updateById(sku);
-            log.info("SKU库存更新成功");
+            log.info("SKU库存更新成功：skuId={}, newStock={}", skuId, newStock);
         } else {
-            log.warn("SKU不存在：skuId={}", skuId);
+            log.error("SKU不存在，无法更新库存：skuId={}", skuId);
         }
     }
 

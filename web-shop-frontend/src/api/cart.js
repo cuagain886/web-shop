@@ -13,7 +13,7 @@ export function getCartList() {
   const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
   
   return request({
-    url: `/cart/${userId}`,
+    url: `/api/cart/${userId}`,
     method: 'get'
   })
 }
@@ -35,7 +35,7 @@ export function addToCart(data) {
   }
   
   return request({
-    url: '/cart',
+    url: '/api/cart',
     method: 'post',
     data: cartData
   })
@@ -46,7 +46,7 @@ export function addToCart(data) {
  */
 export function updateCartItem(id, data) {
   return request({
-    url: `/cart/${id}`,
+    url: `/api/cart/${id}`,
     method: 'put',
     params: { quantity: data.quantity }
   })
@@ -57,7 +57,7 @@ export function updateCartItem(id, data) {
  */
 export function deleteCartItem(id) {
   return request({
-    url: `/cart/${id}`,
+    url: `/api/cart/${id}`,
     method: 'delete'
   })
 }
@@ -67,7 +67,7 @@ export function deleteCartItem(id) {
  */
 export function batchDeleteCartItems(ids) {
   return request({
-    url: '/cart/batch-delete',
+    url: '/api/cart/batch-delete',
     method: 'post',
     data: { ids }
   })
@@ -78,7 +78,7 @@ export function batchDeleteCartItems(ids) {
  */
 export function toggleCartItem(id, checked) {
   return request({
-    url: `/cart/${id}/toggle`,
+    url: `/api/cart/${id}/select`,
     method: 'put',
     data: { checked }
   })
@@ -92,7 +92,7 @@ export function toggleAllCartItems(checked) {
   const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
   
   return request({
-    url: '/cart/toggle-all',
+    url: '/api/cart/select-all',
     method: 'put',
     params: { userId },
     data: { checked }
@@ -104,8 +104,8 @@ export function toggleAllCartItems(checked) {
  */
 export function clearCart() {
   return request({
-    url: '/cart/clear',
-    method: 'post'
+    url: '/api/cart/clear',
+    method: 'delete'
   })
 }
 
@@ -117,7 +117,7 @@ export function getCartCount() {
   const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
   
   return request({
-    url: `/cart/${userId}/count`,
+    url: `/api/cart/${userId}/count`,
     method: 'get'
   })
 }

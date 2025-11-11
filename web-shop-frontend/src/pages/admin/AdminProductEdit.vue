@@ -216,7 +216,7 @@ const specInputValues = ref([])
 const isEdit = computed(() => !!route.params.id)
 
 // 上传地址（实际不使用，由http-request处理）
-const uploadAction = 'https://mock-upload'
+const uploadAction = ''
 
 const productForm = reactive({
   name: '',

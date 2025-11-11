@@ -9,21 +9,9 @@ import request from '@/utils/request'
  */
 export function login(data) {
   return request({
-    url: '/user/login',
+    url: '/api/user/login',
     method: 'post',
     data
-  }).then(res => {
-    return {
-      token: res.token,
-      userInfo: {
-        id: res.userId,
-        username: res.username,
-        nickname: res.nickname,
-        email: res.email,
-        phone: res.phone,
-        role: res.role
-      }
-    }
   })
 }
 
@@ -32,7 +20,7 @@ export function login(data) {
  */
 export function register(data) {
   return request({
-    url: '/user/register',
+    url: '/api/user/register',
     method: 'post',
     data
   })
@@ -41,9 +29,9 @@ export function register(data) {
 /**
  * 获取用户信息
  */
-export function getUserInfo() {
+export function getUserInfo(userId) {
   return request({
-    url: '/user/info',
+    url: `/api/user/info/${userId}`,
     method: 'get'
   })
 }
@@ -51,9 +39,9 @@ export function getUserInfo() {
 /**
  * 更新用户信息
  */
-export function updateUserInfo(data) {
+export function updateUserInfo(userId, data) {
   return request({
-    url: '/user/info',
+    url: `/api/user/${userId}`,
     method: 'put',
     data
   })
@@ -62,9 +50,9 @@ export function updateUserInfo(data) {
 /**
  * 修改密码
  */
-export function changePassword(data) {
+export function changePassword(userId, data) {
   return request({
-    url: '/user/password',
+    url: `/api/user/${userId}/password`,
     method: 'put',
     data
   })
@@ -73,9 +61,9 @@ export function changePassword(data) {
 /**
  * 获取用户地址列表
  */
-export function getAddressList() {
+export function getAddressList(userId) {
   return request({
-    url: '/user/address',
+    url: `/api/address/${userId}`,
     method: 'get'
   })
 }
@@ -85,7 +73,7 @@ export function getAddressList() {
  */
 export function addAddress(data) {
   return request({
-    url: '/user/address',
+    url: '/api/address',
     method: 'post',
     data
   })
@@ -96,7 +84,7 @@ export function addAddress(data) {
  */
 export function updateAddress(id, data) {
   return request({
-    url: `/user/address/${id}`,
+    url: `/api/address/${id}`,
     method: 'put',
     data
   })
@@ -107,7 +95,7 @@ export function updateAddress(id, data) {
  */
 export function deleteAddress(id) {
   return request({
-    url: `/user/address/${id}`,
+    url: `/api/address/${id}`,
     method: 'delete'
   })
 }
@@ -117,7 +105,7 @@ export function deleteAddress(id) {
  */
 export function setDefaultAddress(id) {
   return request({
-    url: `/user/address/${id}/default`,
+    url: `/api/address/${id}/default`,
     method: 'put'
   })
 }
@@ -127,7 +115,7 @@ export function setDefaultAddress(id) {
  */
 export function merchantLogin(data) {
   return request({
-    url: '/merchant/login',
+    url: '/api/user/login',
     method: 'post',
     data
   })
@@ -148,7 +136,7 @@ export function logout() {
  */
 export function getUserList(params) {
   return request({
-    url: '/user/list',
+    url: '/api/user/list',
     method: 'get',
     params
   })
@@ -159,7 +147,7 @@ export function getUserList(params) {
  */
 export function disableUser(userId) {
   return request({
-    url: `/user/${userId}/disable`,
+    url: `/api/user/${userId}/disable`,
     method: 'put'
   })
 }
@@ -169,7 +157,7 @@ export function disableUser(userId) {
  */
 export function enableUser(userId) {
   return request({
-    url: `/user/${userId}/enable`,
+    url: `/api/user/${userId}/enable`,
     method: 'put'
   })
 }
@@ -179,7 +167,7 @@ export function enableUser(userId) {
  */
 export function deleteAccount(userId) {
   return request({
-    url: `/user/${userId}/account`,
+    url: `/api/user/${userId}/account`,
     method: 'delete'
   })
 }

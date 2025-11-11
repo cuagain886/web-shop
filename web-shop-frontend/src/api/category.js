@@ -9,7 +9,7 @@ import request from '@/utils/request'
  */
 export function getCategoryList(params = {}) {
   return request({
-    url: '/category/list',
+    url: '/api/category/list',
     method: 'get',
     params
   })
@@ -20,7 +20,7 @@ export function getCategoryList(params = {}) {
  */
 export function getCategoryTree() {
   return request({
-    url: '/category/tree',
+    url: '/api/category/tree',
     method: 'get'
   })
 }
@@ -30,7 +30,7 @@ export function getCategoryTree() {
  */
 export function getCategoryDetail(id) {
   return request({
-    url: `/category/${id}`,
+    url: `/api/category/${id}`,
     method: 'get'
   })
 }
@@ -40,7 +40,7 @@ export function getCategoryDetail(id) {
  */
 export function addCategory(data) {
   return request({
-    url: '/category',
+    url: '/api/category',
     method: 'post',
     data
   })
@@ -51,7 +51,7 @@ export function addCategory(data) {
  */
 export function updateCategory(id, data) {
   return request({
-    url: `/category/${id}`,
+    url: `/api/category/${id}`,
     method: 'put',
     data
   })
@@ -62,7 +62,7 @@ export function updateCategory(id, data) {
  */
 export function deleteCategory(id) {
   return request({
-    url: `/category/${id}`,
+    url: `/api/category/${id}`,
     method: 'delete'
   })
 }
@@ -72,7 +72,7 @@ export function deleteCategory(id) {
  */
 export function batchDeleteCategories(ids) {
   return request({
-    url: '/category/batch-delete',
+    url: '/api/category/batch',
     method: 'post',
     data: { ids }
   })

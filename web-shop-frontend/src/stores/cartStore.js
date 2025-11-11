@@ -159,10 +159,12 @@ export const useCartStore = defineStore('cart', () => {
   // 更新购物车数量（仅用于显示）
   const updateCartCount = async () => {
     try {
-      const count = await getCartCount()
-      cartCount.value = count
+      const data = await getCartCount()
+      // 后端返回的是 { data: count } 格式，需要提取 data 字段
+      cartCount.value = typeof data === 'number' ? data : (data?.data || 0)
     } catch (error) {
       console.error('更新购物车数量失败：', error)
+      cartCount.value = 0
     }
   }
 

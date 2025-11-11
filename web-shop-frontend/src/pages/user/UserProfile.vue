@@ -329,11 +329,11 @@ const todoStats = reactive({
   pendingReview: 0
 })
 
-// 资产信息（Mock数据）
+// 资产信息
 const assets = reactive({
-  coupons: 5,
-  points: 1280,
-  balance: 156.50
+  coupons: 0,
+  points: 0,
+  balance: 0
 })
 
 // 会员等级信息

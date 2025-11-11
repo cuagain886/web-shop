@@ -9,7 +9,7 @@ import request from '@/utils/request'
  */
 export function getCategoryList() {
   return request({
-    url: '/product/categories',
+    url: '/api/category/list',
     method: 'get'
   })
 }
@@ -19,7 +19,7 @@ export function getCategoryList() {
  */
 export function getProductDetail(id) {
   return request({
-    url: `/product/${id}`,
+    url: `/api/product/${id}`,
     method: 'get'
   })
 }
@@ -29,7 +29,7 @@ export function getProductDetail(id) {
  */
 export function searchProduct(params) {
   return request({
-    url: '/product/search',
+    url: '/api/product/list',
     method: 'get',
     params
   })
@@ -40,7 +40,7 @@ export function searchProduct(params) {
  */
 export function getHotProducts(params) {
   return request({
-    url: '/product/hot',
+    url: '/api/product/hot',
     method: 'get',
     params
   })
@@ -51,7 +51,7 @@ export function getHotProducts(params) {
  */
 export function getRecommendProducts(params) {
   return request({
-    url: '/product/recommend',
+    url: '/api/product/recommend',
     method: 'get',
     params
   })
@@ -62,7 +62,7 @@ export function getRecommendProducts(params) {
  */
 export function getFlashSaleProducts(params) {
   return request({
-    url: '/product/flash-sale',
+    url: '/api/product/flash-sale',
     method: 'get',
     params
   })
@@ -73,7 +73,7 @@ export function getFlashSaleProducts(params) {
  */
 export function getProductReviews(id, params) {
   return request({
-    url: `/product/${id}/reviews`,
+    url: `/api/product/${id}/reviews`,
     method: 'get',
     params
   })
@@ -84,7 +84,7 @@ export function getProductReviews(id, params) {
  */
 export function addProductReview(id, data) {
   return request({
-    url: `/product/${id}/review`,
+    url: `/api/product/${id}/review`,
     method: 'post',
     data
   })
@@ -97,7 +97,7 @@ export function addProductReview(id, data) {
  */
 export function getAdminProductList(params = {}) {
   return request({
-    url: '/product/admin/list',
+    url: '/api/admin/products/list',
     method: 'get',
     params
   })
@@ -108,7 +108,7 @@ export function getAdminProductList(params = {}) {
  */
 export function addProduct(data) {
   return request({
-    url: '/product',
+    url: '/api/admin/products',
     method: 'post',
     data
   })
@@ -119,7 +119,7 @@ export function addProduct(data) {
  */
 export function getAdminProductDetail(id) {
   return request({
-    url: `/admin/products/${id}`,
+    url: `/api/admin/products/${id}`,
     method: 'get'
   })
 }
@@ -129,7 +129,7 @@ export function getAdminProductDetail(id) {
  */
 export function updateProduct(id, data) {
   return request({
-    url: `/admin/products/${id}`,
+    url: `/api/admin/products/${id}`,
     method: 'put',
     data
   })
@@ -140,7 +140,7 @@ export function updateProduct(id, data) {
  */
 export function deleteProduct(id) {
   return request({
-    url: `/admin/products/${id}`,
+    url: `/api/admin/products/${id}`,
     method: 'delete'
   })
 }
@@ -149,10 +149,11 @@ export function deleteProduct(id) {
  * 商品上架/下架（管理端）
  */
 export function updateProductStatus(id, status) {
-  const endpoint = status === 'active' ? 'on-shelf' : 'off-shelf'
+  const statusValue = status === 'active' ? 1 : 0
   return request({
-    url: `/product/${id}/${endpoint}`,
-    method: 'put'
+    url: `/api/admin/products/${id}/status`,
+    method: 'put',
+    params: { status: statusValue }
   })
 }
 
@@ -161,7 +162,7 @@ export function updateProductStatus(id, status) {
  */
 export function updateProductStock(id, data) {
   return request({
-    url: `/admin/products/${id}/stock`,
+    url: `/api/admin/products/${id}/stock`,
     method: 'put',
     data
   })
@@ -177,7 +178,7 @@ export function uploadProductImage(file, prefix) {
     formData.append('prefix', prefix)
   }
   return request({
-    url: '/upload/image',
+    url: '/api/upload/image',
     method: 'post',
     data: formData,
     headers: {
@@ -191,8 +192,8 @@ export function uploadProductImage(file, prefix) {
  */
 export function batchDeleteProducts(ids) {
   return request({
-    url: '/admin/products/batch-delete',
-    method: 'post',
+    url: '/api/admin/products/batch',
+    method: 'delete',
     data: { ids }
   })
 }
@@ -202,7 +203,7 @@ export function batchDeleteProducts(ids) {
  */
 export function updateProductRecommend(id, isRecommend) {
   return request({
-    url: `/admin/products/${id}/recommend`,
+    url: `/api/admin/products/${id}/recommend`,
     method: 'put',
     params: { isRecommend }
   })
@@ -213,7 +214,7 @@ export function updateProductRecommend(id, isRecommend) {
  */
 export function updateProductFlashSale(id, isFlashSale) {
   return request({
-    url: `/admin/products/${id}/flash-sale`,
+    url: `/api/admin/products/${id}/flash-sale`,
     method: 'put',
     params: { isFlashSale }
   })
@@ -224,8 +225,39 @@ export function updateProductFlashSale(id, isFlashSale) {
  */
 export const getProductList = (params = {}) => {
   return request({
-    url: '/product/list',
+    url: '/api/product/list',
     method: 'get',
     params
+  })
+}
+
+/**
+ * 添加商品收藏
+ */
+export function addFavorite(productId) {
+  return request({
+    url: '/api/favorite',
+    method: 'post',
+    data: { productId }
+  })
+}
+
+/**
+ * 取消商品收藏
+ */
+export function removeFavorite(productId) {
+  return request({
+    url: `/api/favorite/${productId}`,
+    method: 'delete'
+  })
+}
+
+/**
+ * 检查商品是否已收藏
+ */
+export function checkFavorite(productId) {
+  return request({
+    url: `/api/favorite/check/${productId}`,
+    method: 'get'
   })
 }

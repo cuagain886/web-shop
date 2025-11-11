@@ -143,5 +143,20 @@ public class RefundController {
 
         return Result.success("退款已完成");
     }
+
+    /**
+     * 根据订单ID获取退款信息
+     */
+    @GetMapping("/order/{orderId}")
+    @Operation(summary = "根据订单ID获取退款信息", description = "获取指定订单的退款申请")
+    public Result<Refund> getRefundByOrderId(
+            @Parameter(description = "订单ID", required = true, example = "1")
+            @PathVariable Long orderId) {
+        log.info("根据订单ID获取退款信息：orderId={}", orderId);
+
+        Refund refund = refundService.getRefundByOrderId(orderId);
+
+        return Result.success(refund);
+    }
 }
 

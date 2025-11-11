@@ -63,9 +63,17 @@ public interface RefundService extends IService<Refund> {
 
     /**
      * 完成退款
-     * 
+     *
      * @param refundId 退款ID
      */
     void completeRefund(Long refundId);
+
+    /**
+     * 根据订单ID获取退款信息
+     *
+     * @param orderId 订单ID
+     * @return 退款信息
+     */
+    Refund getRefundByOrderId(Long orderId);
 }
 

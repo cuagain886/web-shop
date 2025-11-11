@@ -114,11 +114,11 @@
         <div class="price-section">
           <div class="price-row">
             <span class="price-label">商品总价：</span>
-            <span class="price-value">¥{{ Number(order.totalAmount).toFixed(2) }}</span>
+            <span class="price-value">¥{{ (Number(order.totalAmount) - Number(order.freight || 0)).toFixed(2) }}</span>
           </div>
           <div class="price-row">
             <span class="price-label">运费：</span>
-            <span class="price-value">¥0.00</span>
+            <span class="price-value">¥{{ Number(order.freight || 0).toFixed(2) }}</span>
           </div>
           <div class="price-row total-row">
             <span class="price-label">实付款：</span>
@@ -156,6 +156,30 @@
           <el-empty v-if="!order.notes || order.notes.length === 0" description="暂无备注" />
         </div>
 
+        <!-- 退款信息 -->
+        <div v-if="refundInfo && order.status === 5" class="refund-section">
+          <h3 class="section-title">退款信息</h3>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="退款单号">
+              {{ refundInfo.refundNo }}
+            </el-descriptions-item>
+            <el-descriptions-item label="退款金额">
+              <span style="color: #f56c6c; font-weight: 600;">¥{{ Number(refundInfo.refundAmount).toFixed(2) }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="退款原因" :span="2">
+              {{ refundInfo.reason }}
+            </el-descriptions-item>
+            <el-descriptions-item label="申请时间" :span="2">
+              {{ formatDate(refundInfo.createdTime) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="审核状态" :span="2">
+              <el-tag :type="getRefundStatusType(refundInfo.status)">
+                {{ getRefundStatusText(refundInfo.status) }}
+              </el-tag>
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
         <!-- 操作按钮 -->
         <div class="action-section">
           <el-button
@@ -175,6 +199,26 @@
             @click="shipDialogVisible = true"
           >
             订单发货
+          </el-button>
+
+          <el-button
+            v-if="order.status === 5 && refundInfo && refundInfo.status === 0"
+            type="success"
+            size="large"
+            :loading="reviewing"
+            @click="handleApproveRefund"
+          >
+            同意退款
+          </el-button>
+
+          <el-button
+            v-if="order.status === 5 && refundInfo && refundInfo.status === 0"
+            type="danger"
+            size="large"
+            :loading="reviewing"
+            @click="handleRejectRefund"
+          >
+            拒绝退款
           </el-button>
         </div>
       </div>
@@ -220,22 +264,25 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { getAdminOrderDetail, shipOrder, adminCancelOrder, addOrderNote } from '@/api/order'
+import { getAdminOrderDetail, shipOrder, adminCancelOrder, addOrderNote, getOrderRefund, reviewRefund } from '@/api/order'
 
 const route = useRoute()
 const router = useRouter()
 
 const order = ref(null)
+const refundInfo = ref(null)
 const newNote = ref('')
 const shipDialogVisible = ref(false)
 const shipping = ref(false)
 const cancelling = ref(false)
 const addingNote = ref(false)
+const reviewing = ref(false)
 const shipFormRef = ref(null)
+const refreshTimer = ref(null)
 
 const shipForm = reactive({
   trackingNo: ''
@@ -273,6 +320,16 @@ const fetchOrderDetail = async () => {
     const orderId = route.params.id
     const orderData = await getAdminOrderDetail(orderId)
     order.value = orderData
+    
+    // 如果订单状态是退款中，获取退款信息
+    if (orderData.status === 5) {
+      try {
+        const refund = await getOrderRefund(orderId)
+        refundInfo.value = refund
+      } catch (error) {
+        console.error('获取退款信息失败:', error)
+      }
+    }
   } catch (error) {
     console.error('获取订单详情失败:', error)
     ElMessage.error('获取订单详情失败')
@@ -363,6 +420,60 @@ const handleAddNote = async () => {
 }
 
 /**
+ * 同意退款
+ */
+const handleApproveRefund = async () => {
+  try {
+    await ElMessageBox.confirm('确定要同意该退款申请吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    reviewing.value = true
+    
+    await reviewRefund(refundInfo.value.id, 1)
+    
+    ElMessage.success('退款已同意')
+    fetchOrderDetail()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('审核退款失败:', error)
+      ElMessage.error(error.message || '审核退款失败')
+    }
+  } finally {
+    reviewing.value = false
+  }
+}
+
+/**
+ * 拒绝退款
+ */
+const handleRejectRefund = async () => {
+  try {
+    await ElMessageBox.confirm('确定要拒绝该退款申请吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    reviewing.value = true
+    
+    await reviewRefund(refundInfo.value.id, 2)
+    
+    ElMessage.success('退款已拒绝')
+    fetchOrderDetail()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('审核退款失败:', error)
+      ElMessage.error(error.message || '审核退款失败')
+    }
+  } finally {
+    reviewing.value = false
+  }
+}
+
+/**
  * 返回列表
  */
 const goBack = () => {
@@ -370,7 +481,7 @@ const goBack = () => {
 }
 
 /**
- * 获取状态类型
+ * 获取订单状态类型
  */
 const getStatusType = (status) => {
   const typeMap = {
@@ -387,7 +498,7 @@ const getStatusType = (status) => {
 }
 
 /**
- * 获取状态文本
+ * 获取订单状态文本
  */
 const getStatusText = (status) => {
   const textMap = {
@@ -399,6 +510,30 @@ const getStatusText = (status) => {
     5: '退款中',
     6: '已退款',
     7: '已退款'
+  }
+  return textMap[status] || '未知'
+}
+
+/**
+ * 获取退款状态类型
+ */
+const getRefundStatusType = (status) => {
+  const typeMap = {
+    0: 'warning',  // 待审核
+    1: 'success',  // 已同意
+    2: 'danger'    // 已拒绝
+  }
+  return typeMap[status] || 'info'
+}
+
+/**
+ * 获取退款状态文本
+ */
+const getRefundStatusText = (status) => {
+  const textMap = {
+    0: '待审核',
+    1: '已同意',
+    2: '已拒绝'
   }
   return textMap[status] || '未知'
 }
@@ -428,8 +563,33 @@ const formatDate = (dateString) => {
   return `${year}-${month}-${day} ${hours}:${minutes}`
 }
 
+/**
+ * 启动自动刷新定时器
+ */
+const startAutoRefresh = () => {
+  // 每5秒刷新一次订单状态
+  refreshTimer.value = setInterval(() => {
+    fetchOrderDetail()
+  }, 5000)
+}
+
+/**
+ * 停止自动刷新定时器
+ */
+const stopAutoRefresh = () => {
+  if (refreshTimer.value) {
+    clearInterval(refreshTimer.value)
+    refreshTimer.value = null
+  }
+}
+
 onMounted(() => {
   fetchOrderDetail()
+  startAutoRefresh()
+})
+
+onUnmounted(() => {
+  stopAutoRefresh()
 })
 </script>
 
@@ -556,6 +716,15 @@ onMounted(() => {
   color: #333;
 }
 
+.add-note {
+  margin-top: 15px;
+}
+
+/* 退款区域 */
+.refund-section {
+  background: white !important;
+}
+
 /* 操作按钮 */
 .action-section {
   background: white !important;
@@ -565,5 +734,3 @@ onMounted(() => {
   padding: 30px 20px !important;
 }
 </style>
-
-

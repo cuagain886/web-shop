@@ -186,8 +186,10 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Download, RefreshRight } from '@element-plus/icons-vue'
+import { getSettings, updateSettings } from '@/api/settings'
 
 const saving = ref(false)
+const loading = ref(false)
 const settingsFormRef = ref(null)
 
 const settingsForm = reactive({
@@ -213,16 +215,12 @@ const handleSave = async () => {
   try {
     saving.value = true
     
-    // 模拟保存延迟
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // Mock实现：保存到localStorage
-    localStorage.setItem('system_settings', JSON.stringify(settingsForm))
+    await updateSettings(settingsForm)
     
     ElMessage.success('设置已保存')
   } catch (error) {
     console.error('保存设置失败:', error)
-    ElMessage.error('保存设置失败')
+    ElMessage.error(error.message || '保存设置失败')
   } finally {
     saving.value = false
   }
@@ -288,14 +286,17 @@ const handleResetSystem = async () => {
 /**
  * 加载设置
  */
-const loadSettings = () => {
+const loadSettings = async () => {
   try {
-    const saved = localStorage.getItem('system_settings')
-    if (saved) {
-      Object.assign(settingsForm, JSON.parse(saved))
-    }
+    loading.value = true
+    const settings = await getSettings()
+    Object.assign(settingsForm, settings)
+    Object.assign(defaultSettings, settings)
   } catch (error) {
     console.error('加载设置失败:', error)
+    ElMessage.error('加载设置失败')
+  } finally {
+    loading.value = false
   }
 }
 

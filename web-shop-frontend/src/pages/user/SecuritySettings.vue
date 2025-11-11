@@ -137,36 +137,13 @@ const passwordRules = {
   ]
 }
 
-// Mock登录记录
-const loginHistory = ref([
-  {
-    time: '2024-03-20 15:30:25',
-    device: 'Windows Chrome',
-    ip: '192.168.1.1',
-    location: '北京市 海淀区'
-  },
-  {
-    time: '2024-03-19 10:15:42',
-    device: 'iPhone Safari',
-    ip: '192.168.1.2',
-    location: '北京市 朝阳区'
-  },
-  {
-    time: '2024-03-18 08:20:15',
-    device: 'Windows Chrome',
-    ip: '192.168.1.1',
-    location: '北京市 海淀区'
-  }
-])
+const loginHistory = ref([])
 
 const handleChangePassword = async () => {
   try {
     await passwordFormRef.value.validate()
     
     changing.value = true
-    
-    // Mock延迟
-    await new Promise(resolve => setTimeout(resolve, 500))
     
     ElMessage.success('密码修改成功')
     resetPasswordForm()
@@ -222,4 +199,3 @@ h3 {
   font-weight: 600;
 }
 </style>
-

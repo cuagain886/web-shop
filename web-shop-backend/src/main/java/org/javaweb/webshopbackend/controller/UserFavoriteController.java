@@ -7,9 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.pojo.common.Result;
 import org.javaweb.webshopbackend.pojo.entity.UserFavorite;
 import org.javaweb.webshopbackend.service.UserFavoriteService;
+import org.javaweb.webshopbackend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
@@ -27,16 +29,37 @@ public class UserFavoriteController {
     @Autowired
     private UserFavoriteService favoriteService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     /**
-     * 添加收藏
+     * 添加收藏（支持两种调用方式）
      */
     @PostMapping
     @Operation(summary = "添加收藏", description = "用户收藏商品")
     public Result<Void> addFavorite(
-            @Parameter(description = "用户ID", required = true, example = "1")
-            @RequestParam Long userId,
             @Parameter(description = "商品ID", required = true, example = "1")
-            @RequestParam Long productId) {
+            @RequestBody(required = false) java.util.Map<String, Object> body,
+            @Parameter(description = "用户ID", required = false, example = "1")
+            @RequestParam(required = false) Long userId,
+            @Parameter(description = "商品ID", required = false, example = "1")
+            @RequestParam(required = false) Long productId,
+            HttpServletRequest request) {
+        
+        // 从请求体中获取productId
+        if (body != null && body.containsKey("productId")) {
+            productId = Long.parseLong(body.get("productId").toString());
+        }
+        
+        // 从JWT token中获取userId
+        if (userId == null) {
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+                userId = jwtUtil.getUserIdFromToken(token);
+            }
+        }
+        
         log.info("添加收藏：userId={}, productId={}", userId, productId);
 
         favoriteService.addFavorite(userId, productId);
@@ -45,15 +68,26 @@ public class UserFavoriteController {
     }
 
     /**
-     * 取消收藏
+     * 取消收藏（支持两种调用方式）
      */
-    @DeleteMapping
+    @DeleteMapping("/{productId}")
     @Operation(summary = "取消收藏", description = "用户取消收藏商品")
     public Result<Void> removeFavorite(
-            @Parameter(description = "用户ID", required = true, example = "1")
-            @RequestParam Long userId,
             @Parameter(description = "商品ID", required = true, example = "1")
-            @RequestParam Long productId) {
+            @PathVariable Long productId,
+            @Parameter(description = "用户ID", required = false, example = "1")
+            @RequestParam(required = false) Long userId,
+            HttpServletRequest request) {
+        
+        // 从JWT token中获取userId
+        if (userId == null) {
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+                userId = jwtUtil.getUserIdFromToken(token);
+            }
+        }
+        
         log.info("取消收藏：userId={}, productId={}", userId, productId);
 
         favoriteService.removeFavorite(userId, productId);
@@ -79,18 +113,35 @@ public class UserFavoriteController {
     /**
      * 检查是否已收藏
      */
-    @GetMapping("/check")
+    @GetMapping("/check/{productId}")
     @Operation(summary = "检查是否已收藏", description = "检查用户是否已收藏某商品")
-    public Result<Boolean> isFavorite(
-            @Parameter(description = "用户ID", required = true, example = "1")
-            @RequestParam Long userId,
+    public Result<java.util.Map<String, Object>> isFavorite(
             @Parameter(description = "商品ID", required = true, example = "1")
-            @RequestParam Long productId) {
+            @PathVariable Long productId,
+            @Parameter(description = "用户ID", required = false, example = "1")
+            @RequestParam(required = false) Long userId,
+            HttpServletRequest request) {
+        
+        // 从JWT token中获取userId
+        if (userId == null) {
+            String token = request.getHeader("Authorization");
+            if (token != null && token.startsWith("Bearer ")) {
+                token = token.substring(7);
+                userId = jwtUtil.getUserIdFromToken(token);
+            }
+        }
+        
         log.info("检查是否已收藏：userId={}, productId={}", userId, productId);
 
-        boolean isFavorite = favoriteService.isFavorite(userId, productId);
-
-        return Result.success(isFavorite);
+        boolean isFavorite = false;
+        if (userId != null) {
+            isFavorite = favoriteService.isFavorite(userId, productId);
+        }
+        
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("isFavorited", isFavorite);
+        
+        return Result.success(result);
     }
 
     /**

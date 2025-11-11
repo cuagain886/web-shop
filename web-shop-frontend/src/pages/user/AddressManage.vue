@@ -85,13 +85,27 @@
           />
         </el-form-item>
 
-        <el-form-item label="所在地区" prop="region">
-          <el-cascader
-            v-model="addressForm.region"
-            :options="regionOptions"
-            placeholder="请选择省/市/区"
-            style="width: 100%;"
-            @change="handleRegionChange"
+        <el-form-item label="省份" prop="province">
+          <el-input
+            v-model="addressForm.province"
+            placeholder="请输入省份"
+            maxlength="20"
+          />
+        </el-form-item>
+
+        <el-form-item label="城市" prop="city">
+          <el-input
+            v-model="addressForm.city"
+            placeholder="请输入城市"
+            maxlength="20"
+          />
+        </el-form-item>
+
+        <el-form-item label="区/县" prop="district">
+          <el-input
+            v-model="addressForm.district"
+            placeholder="请输入区/县"
+            maxlength="20"
           />
         </el-form-item>
 
@@ -137,7 +151,6 @@ const addressForm = reactive({
   id: null,
   receiverName: '',
   phone: '',
-  region: [],
   province: '',
   city: '',
   district: '',
@@ -153,54 +166,19 @@ const addressRules = {
     { required: true, message: '请输入联系电话', trigger: 'blur' },
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ],
-  region: [
-    { required: true, message: '请选择所在地区', trigger: 'change' }
+  province: [
+    { required: true, message: '请输入省份', trigger: 'blur' }
+  ],
+  city: [
+    { required: true, message: '请输入城市', trigger: 'blur' }
+  ],
+  district: [
+    { required: true, message: '请输入区/县', trigger: 'blur' }
   ],
   detail: [
     { required: true, message: '请输入详细地址', trigger: 'blur' }
   ]
 }
-
-// Mock地区数据
-const regionOptions = [
-  {
-    value: '北京',
-    label: '北京',
-    children: [
-      {
-        value: '北京市',
-        label: '北京市',
-        children: [
-          { value: '朝阳区', label: '朝阳区' },
-          { value: '海淀区', label: '海淀区' },
-          { value: '西城区', label: '西城区' }
-        ]
-      }
-    ]
-  },
-  {
-    value: '广东',
-    label: '广东',
-    children: [
-      {
-        value: '广州市',
-        label: '广州市',
-        children: [
-          { value: '天河区', label: '天河区' },
-          { value: '越秀区', label: '越秀区' }
-        ]
-      },
-      {
-        value: '深圳市',
-        label: '深圳市',
-        children: [
-          { value: '南山区', label: '南山区' },
-          { value: '福田区', label: '福田区' }
-        ]
-      }
-    ]
-  }
-]
 
 /**
  * 加载地址列表
@@ -229,10 +207,7 @@ const handleAdd = () => {
  */
 const handleEdit = (address) => {
   dialogTitle.value = '编辑地址'
-  Object.assign(addressForm, {
-    ...address,
-    region: [address.province, address.city, address.district]
-  })
+  Object.assign(addressForm, address)
   dialogVisible.value = true
 }
 
@@ -245,14 +220,20 @@ const handleSave = async () => {
     
     saving.value = true
     
+    // 从userStore获取userId
+    const { useUserStore } = await import('@/stores/userStore')
+    const userStore = useUserStore()
+    const userId = userStore.userInfo?.id || userStore.userInfo?.userId
+    
     const data = {
+      userId: userId,
       receiverName: addressForm.receiverName,
-      phone: addressForm.phone,
+      receiverPhone: addressForm.phone,
       province: addressForm.province,
       city: addressForm.city,
       district: addressForm.district,
-      detail: addressForm.detail,
-      isDefault: addressForm.isDefault
+      detailAddress: addressForm.detail,
+      isDefault: addressForm.isDefault ? 1 : 0
     }
 
     if (addressForm.id) {
@@ -304,24 +285,12 @@ const handleDelete = async (id) => {
 }
 
 /**
- * 地区改变
- */
-const handleRegionChange = (value) => {
-  if (value && value.length === 3) {
-    addressForm.province = value[0]
-    addressForm.city = value[1]
-    addressForm.district = value[2]
-  }
-}
-
-/**
  * 重置表单
  */
 const resetForm = () => {
   addressForm.id = null
   addressForm.receiverName = ''
   addressForm.phone = ''
-  addressForm.region = []
   addressForm.province = ''
   addressForm.city = ''
   addressForm.district = ''
@@ -410,4 +379,3 @@ onMounted(() => {
   border-top: 1px solid #e4e7ed;
 }
 </style>
-

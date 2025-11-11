@@ -28,7 +28,7 @@
         </div>
       </div>
       <div class="footer-copy">
-        <p>&copy; 2025 京东风格购物平台 | 仅供学习演示使用</p>
+        <p>&copy; 2025 Web-Shop购物平台 | 仅供学习演示使用</p>
       </div>
     </div>
   </footer>

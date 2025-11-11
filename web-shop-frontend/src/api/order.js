@@ -9,7 +9,7 @@ import request from '@/utils/request'
  */
 export function createOrder(data) {
   return request({
-    url: '/orders',
+    url: '/api/orders',
     method: 'post',
     data
   })
@@ -21,7 +21,7 @@ export function createOrder(data) {
 export function getOrderList(params = {}) {
   const { userId, page = 1, pageSize = 10, status } = params
   return request({
-    url: `/orders/user/${userId}`,
+    url: `/api/orders/user/${userId}`,
     method: 'get',
     params: {
       pageNum: page,
@@ -36,7 +36,7 @@ export function getOrderList(params = {}) {
  */
 export function getOrderDetail(id) {
   return request({
-    url: `/orders/${id}`,
+    url: `/api/orders/${id}`,
     method: 'get'
   })
 }
@@ -46,7 +46,7 @@ export function getOrderDetail(id) {
  */
 export function cancelOrder(orderNo, userId = 1, reason = '不想要了') {
   return request({
-    url: `/orders/${orderNo}/cancel`,
+    url: `/api/orders/${orderNo}/cancel`,
     method: 'put',
     params: { userId, reason }
   })
@@ -57,7 +57,7 @@ export function cancelOrder(orderNo, userId = 1, reason = '不想要了') {
  */
 export function deleteOrder(id) {
   return request({
-    url: `/order/${id}`,
+    url: `/api/orders/${id}`,
     method: 'delete'
   })
 }
@@ -67,7 +67,7 @@ export function deleteOrder(id) {
  */
 export function confirmReceipt(orderNo, userId) {
   return request({
-    url: `/orders/${orderNo}/receive`,
+    url: `/api/orders/${orderNo}/receive`,
     method: 'put',
     params: { userId }
   })
@@ -76,11 +76,57 @@ export function confirmReceipt(orderNo, userId) {
 /**
  * 申请退款
  */
-export function applyRefund(id, data) {
+export function applyRefund(data) {
   return request({
-    url: `/order/${id}/refund`,
+    url: '/api/refund',
     method: 'post',
     data
+  })
+}
+
+/**
+ * 获取用户退款列表
+ */
+export function getUserRefunds(userId, params = {}) {
+  return request({
+    url: `/api/refund/user/${userId}`,
+    method: 'get',
+    params: {
+      pageNum: params.page || 1,
+      pageSize: params.pageSize || 10
+    }
+  })
+}
+
+/**
+ * 取消退款申请
+ */
+export function cancelRefund(refundId, userId) {
+  return request({
+    url: `/api/refund/${refundId}/cancel`,
+    method: 'put',
+    params: { userId }
+  })
+}
+
+/**
+ * 审核退款申请（管理端）
+ */
+export function reviewRefund(refundId, status) {
+  return request({
+    url: `/api/refund/${refundId}/review`,
+    method: 'put',
+    params: { status }
+  })
+}
+
+/**
+ * 获取订单的退款信息
+ */
+export function getOrderRefund(orderId) {
+  return request({
+    url: `/api/refund/order/${orderId}`,
+    method: 'get'
   })
 }
 
@@ -89,7 +135,7 @@ export function applyRefund(id, data) {
  */
 export function payOrder(orderNo, userId, paymentMethod = 1) {
   return request({
-    url: `/orders/${orderNo}/pay`,
+    url: `/api/orders/${orderNo}/pay`,
     method: 'put',
     params: { userId, paymentMethod }
   })
@@ -112,7 +158,7 @@ export function getPaymentStatus(id) {
  */
 export function getAdminOrderList(params = {}) {
   return request({
-    url: '/orders/list',
+    url: '/api/orders/list',
     method: 'get',
     params: {
       pageNum: params.page,
@@ -137,7 +183,7 @@ export function getAdminOrderList(params = {}) {
  */
 export function getAdminOrderDetail(id) {
   return request({
-    url: `/orders/${id}`,
+    url: `/api/orders/${id}`,
     method: 'get'
   })
 }
@@ -167,7 +213,7 @@ export function shipOrder(orderNo, dataOrExpressCompany, trackingNo) {
   }
   
   return request({
-    url: `/orders/${orderNo}/ship`,
+    url: `/api/orders/${orderNo}/ship`,
     method: 'put',
     params: {
       expressCompany,

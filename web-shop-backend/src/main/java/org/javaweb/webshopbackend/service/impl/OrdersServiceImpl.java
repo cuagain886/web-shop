@@ -47,6 +47,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private SystemSettingsService systemSettingsService;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Orders createOrder(Long userId, Long addressId, List<Long> cartItemIds, String note) {
@@ -85,13 +88,19 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             totalAmount = totalAmount.add(itemTotal);
         }
 
+        // 获取系统设置中的默认运费
+        SystemSettings settings = systemSettingsService.getSettings();
+        BigDecimal freight = settings != null && settings.getDefaultShipping() != null
+            ? settings.getDefaultShipping()
+            : BigDecimal.ZERO;
+
         // 4. 创建订单
         Orders order = new Orders();
         order.setOrderNo(generateOrderNo());
         order.setUserId(userId);
-        order.setTotalAmount(totalAmount);
-        order.setPayAmount(totalAmount);
-        order.setFreight(BigDecimal.ZERO);
+        order.setTotalAmount(totalAmount.add(freight));
+        order.setPayAmount(totalAmount.add(freight));
+        order.setFreight(freight);
         order.setStatus(0);
         order.setReceiverName(address.getReceiverName());
         order.setReceiverPhone(address.getReceiverPhone());
@@ -156,13 +165,19 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             totalAmount = totalAmount.add(itemTotal);
         }
 
+        // 获取系统设置中的默认运费
+        SystemSettings settings = systemSettingsService.getSettings();
+        BigDecimal freight = settings != null && settings.getDefaultShipping() != null
+            ? settings.getDefaultShipping()
+            : BigDecimal.ZERO;
+
         // 3. 创建订单
         Orders order = new Orders();
         order.setOrderNo(generateOrderNo());
         order.setUserId(userId);
-        order.setTotalAmount(totalAmount);
-        order.setPayAmount(totalAmount);
-        order.setFreight(BigDecimal.ZERO);
+        order.setTotalAmount(totalAmount.add(freight));
+        order.setPayAmount(totalAmount.add(freight));
+        order.setFreight(freight);
         order.setStatus(0);
         order.setReceiverName(address.getReceiverName());
         order.setReceiverPhone(address.getReceiverPhone());
@@ -235,7 +250,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             throw new IllegalArgumentException("订单不存在");
         }
 
-        // 注意：订单项需要单独查询，使用 orderItemService.getByOrderId(orderId)
+        // 查询订单项
+        List<OrderItem> items = orderItemService.getByOrderId(orderId);
+        order.setItems(items);
 
         return order;
     }
@@ -260,10 +277,16 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         // 4. 恢复库存
         List<OrderItem> orderItems = orderItemService.getByOrderId(order.getId());
+        log.info("取消订单，恢复库存：订单项数量={}", orderItems.size());
         for (OrderItem item : orderItems) {
+            log.info("恢复商品库存：productId={}, quantity={}, skuId={}",
+                item.getProductId(), item.getQuantity(), item.getSkuId());
             productService.updateProductStock(item.getProductId(), item.getQuantity());
             if (item.getSkuId() != null) {
+                log.info("恢复SKU库存：skuId={}, quantity={}", item.getSkuId(), item.getQuantity());
                 productService.updateSkuStock(item.getSkuId(), item.getQuantity());
+            } else {
+                log.warn("订单项没有SKU ID，跳过SKU库存恢复：orderItemId={}", item.getId());
             }
         }
 
@@ -290,10 +313,16 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
         // 恢复库存
         List<OrderItem> orderItems = orderItemService.getByOrderId(order.getId());
+        log.info("管理员取消订单，恢复库存：订单项数量={}", orderItems.size());
         for (OrderItem item : orderItems) {
+            log.info("恢复商品库存：productId={}, quantity={}, skuId={}",
+                item.getProductId(), item.getQuantity(), item.getSkuId());
             productService.updateProductStock(item.getProductId(), item.getQuantity());
             if (item.getSkuId() != null) {
+                log.info("恢复SKU库存：skuId={}, quantity={}", item.getSkuId(), item.getQuantity());
                 productService.updateSkuStock(item.getSkuId(), item.getQuantity());
+            } else {
+                log.warn("订单项没有SKU ID，跳过SKU库存恢复：orderItemId={}", item.getId());
             }
         }
 

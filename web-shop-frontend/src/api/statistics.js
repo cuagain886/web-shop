@@ -10,7 +10,7 @@ import request from '@/utils/request'
 export const getSalesOverview = async () => {
   try {
     const ordersRes = await request({
-      url: '/orders/list',
+      url: '/api/orders/list',
       method: 'get',
       params: {
         pageNum: 1,
@@ -89,7 +89,7 @@ export const getSalesTrend = async (days = 7) => {
     const result = []
     
     const ordersRes = await request({
-      url: '/orders/list',
+      url: '/api/orders/list',
       method: 'get',
       params: {
         pageNum: 1,
@@ -131,7 +131,7 @@ export const getSalesTrend = async (days = 7) => {
 export const getProductRanking = async (type = 'sales', limit = 10) => {
   try {
     const ordersRes = await request({
-      url: '/orders/list',
+      url: '/api/orders/list',
       method: 'get',
       params: {
         pageNum: 1,
@@ -197,7 +197,7 @@ export const getProductRanking = async (type = 'sales', limit = 10) => {
 export const getOrderStatusDistribution = async () => {
   try {
     const res = await request({
-      url: '/orders/status-distribution',
+      url: '/api/orders/status-distribution',
       method: 'get'
     })
     

@@ -9,7 +9,7 @@ import request from '@/utils/request'
  */
 export function recordBrowsing(userId, productId) {
   return request({
-    url: '/history',
+    url: '/api/history',
     method: 'post',
     params: { userId, productId }
   })
@@ -20,7 +20,7 @@ export function recordBrowsing(userId, productId) {
  */
 export function getUserHistory(userId, limit = 20) {
   return request({
-    url: `/history/user/${userId}`,
+    url: `/api/history/user/${userId}`,
     method: 'get',
     params: { limit }
   })
@@ -31,7 +31,7 @@ export function getUserHistory(userId, limit = 20) {
  */
 export function deleteHistory(historyId, userId) {
   return request({
-    url: `/history/${historyId}`,
+    url: `/api/history/${historyId}`,
     method: 'delete',
     params: { userId }
   })
@@ -42,7 +42,7 @@ export function deleteHistory(historyId, userId) {
  */
 export function clearHistory(userId) {
   return request({
-    url: `/history/user/${userId}`,
+    url: `/api/history/user/${userId}`,
     method: 'delete'
   })
 }

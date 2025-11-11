@@ -9,24 +9,26 @@
       </div>
     </template>
 
-    <div v-if="favoriteList.length > 0" class="favorite-grid">
+    <el-skeleton v-if="loading" :rows="5" animated />
+
+    <div v-else-if="favoriteList.length > 0" class="favorite-grid">
       <div v-for="item in favoriteList" :key="item.id" class="favorite-item">
         <el-image
-          :src="item.image"
+          :src="item.product?.coverImage || item.productImage"
           fit="cover"
           class="product-image"
           @click="goToProduct(item.productId)"
         />
         <div class="product-info">
           <div class="product-name" @click="goToProduct(item.productId)">
-            {{ item.productName }}
+            {{ item.product?.name || item.productName }}
           </div>
-          <div class="product-price">¥{{ item.price }}</div>
+          <div class="product-price">¥{{ item.product?.price || item.productPrice }}</div>
           <div class="product-actions">
             <el-button size="small" type="primary" @click="goToProduct(item.productId)">
               查看详情
             </el-button>
-            <el-button size="small" text type="danger" @click="handleRemove(item.id)">
+            <el-button size="small" text type="danger" @click="handleRemove(item.productId)">
               取消收藏
             </el-button>
           </div>
@@ -42,38 +44,63 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/stores/userStore'
+import { getFavoriteList as fetchFavoriteList, removeFavorite, clearFavorites } from '@/api/favorite'
 
 const router = useRouter()
+const userStore = useUserStore()
 const favoriteList = ref([])
+const loading = ref(false)
 
-// Mock数据
-const mockFavorites = [
-  {
-    id: 1,
-    productId: 1,
-    productName: 'iPhone 15 Pro Max 256GB 深空黑色',
-    price: 9999,
-    image: 'https://via.placeholder.com/200',
-    createdAt: '2024-03-15'
+// 加载收藏列表
+const loadFavoriteList = async () => {
+  try {
+    const data = await fetchFavoriteList(userStore.userInfo?.id)
+    favoriteList.value = data || []
+    console.log('✅ 收藏列表加载成功:', favoriteList.value)
+  } catch (error) {
+    console.error('❌ 加载收藏列表失败:', error)
+    ElMessage.error('加载收藏列表失败')
   }
-]
-
-const loadFavorites = () => {
-  const saved = localStorage.getItem('user_favorites')
-  favoriteList.value = saved ? JSON.parse(saved) : mockFavorites
 }
 
-const handleRemove = async (id) => {
+const loadFavorites = async () => {
+  loading.value = true
+  try {
+    const userId = userStore.userInfo?.id
+    if (!userId) {
+      ElMessage.warning('请先登录')
+      router.push('/login')
+      return
+    }
+    
+    await loadFavoriteList()
+  } catch (error) {
+    console.error('❌ 加载收藏列表失败:', error)
+    ElMessage.error('加载收藏列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleRemove = async (productId) => {
   try {
     await ElMessageBox.confirm('确定要取消收藏吗？', '提示', {
       type: 'warning'
     })
     
-    favoriteList.value = favoriteList.value.filter(item => item.id !== id)
-    localStorage.setItem('user_favorites', JSON.stringify(favoriteList.value))
+    // 调用API取消收藏
+    await removeFavorite(productId)
+    
+    // 从列表中移除
+    favoriteList.value = favoriteList.value.filter(item => item.productId !== productId)
     ElMessage.success('已取消收藏')
+    console.log('✅ 取消收藏成功')
   } catch (error) {
-    // 取消操作
+    if (error.message !== 'Request canceled.') {
+      console.error('❌ 取消收藏失败:', error)
+      ElMessage.error('取消收藏失败')
+    }
   }
 }
 
@@ -83,11 +110,23 @@ const handleClearAll = async () => {
       type: 'warning'
     })
     
+    const userId = userStore.userInfo?.id
+    if (!userId) {
+      ElMessage.warning('请先登录')
+      return
+    }
+    
+    // 调用API清空收藏
+    await clearFavorites(userId)
+    
     favoriteList.value = []
-    localStorage.setItem('user_favorites', JSON.stringify([]))
     ElMessage.success('已清空收藏')
+    console.log('✅ 清空收藏成功')
   } catch (error) {
-    // 取消操作
+    if (error.message !== 'Request canceled.') {
+      console.error('❌ 清空收藏失败:', error)
+      ElMessage.error('清空收藏失败')
+    }
   }
 }
 
@@ -168,4 +207,3 @@ onMounted(() => {
   gap: 10px;
 }
 </style>
-

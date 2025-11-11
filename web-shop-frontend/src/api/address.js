@@ -13,7 +13,7 @@ export function getAddressList() {
   const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
   
   return request({
-    url: `/address/user/${userId}`,
+    url: `/api/address/user/${userId}`,
     method: 'get'
   })
 }
@@ -26,7 +26,7 @@ export function getDefaultAddress() {
   const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
   
   return request({
-    url: `/address/user/${userId}/default`,
+    url: `/api/address/user/${userId}/default`,
     method: 'get'
   })
 }
@@ -36,7 +36,7 @@ export function getDefaultAddress() {
  */
 export function getAddressDetail(id) {
   return request({
-    url: `/address/${id}`,
+    url: `/api/address/${id}`,
     method: 'get'
   })
 }
@@ -46,7 +46,7 @@ export function getAddressDetail(id) {
  */
 export function addAddress(data) {
   return request({
-    url: '/address',
+    url: '/api/address',
     method: 'post',
     data
   })
@@ -57,7 +57,7 @@ export function addAddress(data) {
  */
 export function updateAddress(id, data) {
   return request({
-    url: `/address/${id}`,
+    url: `/api/address/${id}`,
     method: 'put',
     data
   })
@@ -71,7 +71,7 @@ export function deleteAddress(id) {
   const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
   
   return request({
-    url: `/address/${id}?userId=${userId}`,
+    url: `/api/address/${id}?userId=${userId}`,
     method: 'delete'
   })
 }
@@ -84,7 +84,7 @@ export function setDefaultAddress(id) {
   const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
   
   return request({
-    url: `/address/${id}/default?userId=${userId}`,
+    url: `/api/address/${id}/default?userId=${userId}`,
     method: 'put'
   })
 }

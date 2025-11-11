@@ -288,44 +288,25 @@ CREATE TABLE `refund` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款表';
 
 -- ======================================================
--- 初始化数据
+-- 13. 商品SKU表
 -- ======================================================
+CREATE TABLE IF NOT EXISTS `product_sku` (
+                                             `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'SKU ID',
+                                             `product_id` BIGINT NOT NULL COMMENT '商品ID',
+                                             `sku_code` VARCHAR(50) NOT NULL COMMENT 'SKU编码',
+    `sku_name` VARCHAR(100) NOT NULL COMMENT '规格名称',
+    `attributes` TEXT COMMENT '规格属性JSON',
+    `price` DECIMAL(10, 2) NOT NULL COMMENT 'SKU价格',
+    `original_price` DECIMAL(10, 2) COMMENT 'SKU原价',
+    `stock` INT NOT NULL DEFAULT 0 COMMENT 'SKU库存',
+    `sales` INT NOT NULL DEFAULT 0 COMMENT 'SKU销量',
+    `image` VARCHAR(500) COMMENT 'SKU图片',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态(0-禁用,1-启用)',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除(0-未删除,1-已删除)',
+    `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_sku_code` (`sku_code`),
+    KEY `idx_product_id` (`product_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品SKU表';
 
--- 插入测试用户（密码为 BCrypt 加密后的 "123456"）
-INSERT INTO `user` (`username`, `password`, `nickname`, `role`, `status`) VALUES
-('user01', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '测试用户1', 'user', 1),
-('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '商家管理员', 'merchant', 1);
-
--- 插入商品分类
-INSERT INTO `product_category` (`id`, `name`, `parent_id`, `sort`) VALUES
-(1, '数码电器', 0, 1),
-(2, '服装鞋包', 0, 2),
-(3, '食品生鲜', 0, 3),
-(4, '手机', 1, 1),
-(5, '电脑', 1, 2),
-(6, '男装', 2, 1),
-(7, '女装', 2, 2),
-(8, '水果', 3, 1),
-(9, '零食', 3, 2);
-
--- 插入测试商品
-INSERT INTO `product` (`name`, `category_id`, `price`, `original_price`, `stock`, `sales`, `cover_image`, `description`, `status`, `is_hot`, `is_recommend`) VALUES
-('iPhone 15 Pro', 4, 7999.00, 8999.00, 100, 520, '/images/iphone15.jpg', '苹果iPhone 15 Pro 256GB', 1, 1, 1),
-('华为 Mate 60', 4, 5999.00, 6999.00, 80, 380, '/images/mate60.jpg', '华为Mate 60 Pro 256GB', 1, 1, 0),
-('MacBook Pro', 5, 12999.00, 14999.00, 50, 150, '/images/macbook.jpg', 'MacBook Pro 14英寸 M3芯片', 1, 0, 1),
-('联想小新', 5, 4999.00, 5999.00, 120, 280, '/images/lenovo.jpg', '联想小新 Pro 14 2024', 1, 0, 0),
-('耐克运动鞋', 6, 599.00, 799.00, 200, 650, '/images/nike.jpg', '耐克男士运动鞋 透气轻便', 1, 1, 1);
-
--- ======================================================
--- 说明
--- ======================================================
--- 1. 合并了 user 和 admin 表，使用 role 字段区分用户类型
--- 2. 将 order 表改名为 orders，避免 MySQL 关键字冲突
--- 3. 新增了 4 张表：product_review、user_favorite、browsing_history、operation_log
--- 4. 所有核心业务表添加了 deleted 字段，支持逻辑删除
--- 5. orders 表添加了物流相关字段：express_company、tracking_no
--- 6. product 表添加了 is_hot、is_recommend 字段，支持热销和推荐标记
--- 7. 删除了 coupon 和 user_coupon 表（前端未使用）
--- 8. 优化了索引设计，提升查询性能
--- 9. 商品规格改用 JSON 存储，简化设计
--- 10. 默认密码：123456（BCrypt加密）

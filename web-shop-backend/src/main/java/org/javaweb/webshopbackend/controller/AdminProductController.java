@@ -2,6 +2,8 @@ package org.javaweb.webshopbackend.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,7 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.pojo.common.Result;
 import org.javaweb.webshopbackend.pojo.dto.UpdateStockDTO;
 import org.javaweb.webshopbackend.pojo.entity.Product;
+import org.javaweb.webshopbackend.pojo.entity.ProductSku;
 import org.javaweb.webshopbackend.service.ProductService;
+import org.javaweb.webshopbackend.service.ProductSkuService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +29,12 @@ public class AdminProductController {
 
     @Autowired
     private ProductService productService;
+
+    @Autowired
+    private ProductSkuService productSkuService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @GetMapping("/list")
     @Operation(summary = "管理端商品列表", description = "管理员查询商品列表")
@@ -53,19 +63,72 @@ public class AdminProductController {
 
     @PostMapping
     @Operation(summary = "新增商品", description = "管理员添加新商品")
-    public Result<Product> addProduct(@Valid @RequestBody Product product) {
-        log.info("新增商品：name={}", product.getName());
-        productService.addProduct(product);
-        return Result.success("商品添加成功", product);
+    public Result<Product> addProduct(@RequestBody Map<String, Object> requestData) {
+        try {
+            Product product = objectMapper.convertValue(requestData, Product.class);
+            log.info("新增商品：name={}", product.getName());
+            productService.addProduct(product);
+
+            // 处理SKU数据
+            if (requestData.containsKey("skus") && requestData.get("skus") != null) {
+                List<Map<String, Object>> skusData = (List<Map<String, Object>>) requestData.get("skus");
+                for (Map<String, Object> skuData : skusData) {
+                    ProductSku sku = new ProductSku();
+                    sku.setProductId(product.getId());
+                    sku.setSkuCode((String) skuData.get("skuCode"));
+                    sku.setSkuName((String) skuData.get("skuName"));
+                    sku.setAttributes((String) skuData.get("attributes"));
+                    sku.setPrice(new java.math.BigDecimal(skuData.get("price").toString()));
+                    sku.setOriginalPrice(new java.math.BigDecimal(skuData.get("originalPrice").toString()));
+                    sku.setStock(Integer.parseInt(skuData.get("stock").toString()));
+                    sku.setStatus(1);
+                    productSkuService.save(sku);
+                }
+            }
+
+            return Result.success("商品添加成功", product);
+        } catch (Exception e) {
+            log.error("新增商品失败", e);
+            return Result.error("新增商品失败：" + e.getMessage());
+        }
     }
 
     @PutMapping("/{productId}")
     @Operation(summary = "更新商品", description = "管理员更新商品信息")
-    public Result<Void> updateProduct(@PathVariable Long productId, @RequestBody Product product) {
-        log.info("管理端更新商品：productId={}", productId);
-        product.setId(productId);
-        productService.updateProduct(product);
-        return Result.success("商品更新成功");
+    public Result<Void> updateProduct(@PathVariable Long productId, @RequestBody Map<String, Object> requestData) {
+        try {
+            log.info("管理端更新商品：productId={}", productId);
+            Product product = objectMapper.convertValue(requestData, Product.class);
+            product.setId(productId);
+            productService.updateProduct(product);
+
+            // 处理SKU数据（先删除旧的，再添加新的）
+            if (requestData.containsKey("skus") && requestData.get("skus") != null) {
+                com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ProductSku> wrapper =
+                    new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+                wrapper.eq(ProductSku::getProductId, productId);
+                productSkuService.remove(wrapper);
+
+                List<Map<String, Object>> skusData = (List<Map<String, Object>>) requestData.get("skus");
+                for (Map<String, Object> skuData : skusData) {
+                    ProductSku sku = new ProductSku();
+                    sku.setProductId(productId);
+                    sku.setSkuCode((String) skuData.get("skuCode"));
+                    sku.setSkuName((String) skuData.get("skuName"));
+                    sku.setAttributes((String) skuData.get("attributes"));
+                    sku.setPrice(new java.math.BigDecimal(skuData.get("price").toString()));
+                    sku.setOriginalPrice(new java.math.BigDecimal(skuData.get("originalPrice").toString()));
+                    sku.setStock(Integer.parseInt(skuData.get("stock").toString()));
+                    sku.setStatus(1);
+                    productSkuService.save(sku);
+                }
+            }
+
+            return Result.success("商品更新成功");
+        } catch (Exception e) {
+            log.error("更新商品失败", e);
+            return Result.error("更新商品失败：" + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{productId}")
@@ -98,6 +161,14 @@ public class AdminProductController {
         log.info("管理端更新秒杀状态：productId={}, isFlashSale={}", productId, isFlashSale);
         productService.updateFlashSaleStatus(productId, isFlashSale);
         return Result.success("秒杀状态更新成功");
+    }
+
+    @PutMapping("/{productId}/status")
+    @Operation(summary = "更新商品状态", description = "管理员更新商品上架/下架状态")
+    public Result<Void> updateProductStatus(@PathVariable Long productId, @RequestParam Integer status) {
+        log.info("管理端更新商品状态：productId={}, status={}", productId, status);
+        productService.updateProductStatus(productId, status);
+        return Result.success("状态更新成功");
     }
 
     @PostMapping("/batch-delete")

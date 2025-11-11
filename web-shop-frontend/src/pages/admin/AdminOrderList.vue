@@ -32,6 +32,8 @@
               <el-option label="待收货" :value="2" />
               <el-option label="已完成" :value="3" />
               <el-option label="已取消" :value="4" />
+              <el-option label="退款中" :value="5" />
+              <el-option label="已退款" :value="7" />
             </el-select>
           </el-form-item>
 

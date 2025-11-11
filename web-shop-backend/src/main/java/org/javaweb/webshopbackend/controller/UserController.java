@@ -13,6 +13,7 @@ import org.javaweb.webshopbackend.pojo.dto.LoginDTO;
 import org.javaweb.webshopbackend.pojo.dto.RegisterDTO;
 import org.javaweb.webshopbackend.pojo.entity.User;
 import org.javaweb.webshopbackend.service.UserService;
+import org.javaweb.webshopbackend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +34,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     /**
      * 用户注册
@@ -78,15 +82,13 @@ public class UserController {
         // 调用Service登录
         User user = userService.login(loginDTO.getUsername(), loginDTO.getPassword());
 
-        // 返回用户信息和token（简化版，实际应该生成JWT）
+        // 生成 JWT Token
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
+
+        // 返回用户信息和token
         Map<String, Object> data = new HashMap<>();
-        data.put("userId", user.getId());
-        data.put("username", user.getUsername());
-        data.put("nickname", user.getNickname());
-        data.put("email", user.getEmail());
-        data.put("phone", user.getPhone());
-        data.put("role", user.getRole());
-        data.put("token", "mock-token-" + user.getId()); // 实际应该生成JWT
+        data.put("token", token);
+        data.put("userInfo", user);
 
         return Result.success("登录成功", data);
     }
