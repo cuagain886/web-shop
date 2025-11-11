@@ -50,28 +50,6 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="商品价格" prop="price">
-          <el-input-number
-            v-model="productForm.price"
-            :min="0"
-            :precision="2"
-            :step="1"
-            controls-position="right"
-          />
-          <span class="form-tip">元</span>
-        </el-form-item>
-
-        <el-form-item label="原价" prop="originalPrice">
-          <el-input-number
-            v-model="productForm.originalPrice"
-            :min="0"
-            :precision="2"
-            :step="1"
-            controls-position="right"
-          />
-          <span class="form-tip">元（用于显示折扣，可选）</span>
-        </el-form-item>
-
         <el-form-item label="库存数量" v-if="skuList.length > 0">
           <span style="font-size: 16px; font-weight: 500;">{{ productForm.stock }} 件</span>
           <span class="form-tip">（由SKU库存自动计算）</span>
@@ -258,28 +236,25 @@ const productForm = reactive({
 const skuList = ref([])
 
 const productRules = {
-  name: [
-    { required: true, message: '请输入商品名称', trigger: 'blur' }
-  ],
-  categoryId: [
-    { required: true, message: '请选择商品分类', trigger: 'change' }
-  ],
-  price: [
-    { required: true, message: '请输入商品价格', trigger: 'blur' }
-  ],
-  images: [
-    {
-      validator: (rule, value, callback) => {
-        if (!productForm.images || productForm.images.length === 0) {
-          callback(new Error('请至少上传一张商品图片'))
-        } else {
-          callback()
-        }
-      },
-      trigger: 'change'
-    }
-  ]
-}
+   name: [
+     { required: true, message: '请输入商品名称', trigger: 'blur' }
+   ],
+   categoryId: [
+     { required: true, message: '请选择商品分类', trigger: 'change' }
+   ],
+   images: [
+     {
+       validator: (rule, value, callback) => {
+         if (!productForm.images || productForm.images.length === 0) {
+           callback(new Error('请至少上传一张商品图片'))
+         } else {
+           callback()
+         }
+       },
+       trigger: 'change'
+     }
+   ]
+ }
 
 /**
  * 获取分类列表
@@ -328,8 +303,8 @@ const fetchProductDetail = async (id) => {
       subtitle: product.subtitle || '',
       categoryId: product.categoryId,
       categoryName: product.categoryName,
-      price: product.price,
-      originalPrice: product.originalPrice || product.price,
+      price: 0,
+      originalPrice: 0,
       stock: product.stock,
       status: status,
       images: images,
@@ -459,19 +434,19 @@ const generateSkus = () => {
   
   // 生成SKU组合
   const combinations = generateCombinations(productForm.specs)
-  skuList.value = combinations.map(combo => ({
+  skuList.value = combinations.map((combo, index) => ({
     skuName: combo.name,
     skuCode: generateSkuCode(combo.name),
     attributes: JSON.stringify(combo.attributes),
-    price: productForm.price || 0,
-    originalPrice: productForm.originalPrice || 0,
+    price: null,
+    originalPrice: null,
     stock: 0
   }))
   
   // 更新商品总库存
   updateTotalStock()
   
-  ElMessage.success(`已生成 ${skuList.value.length} 个SKU`)
+  ElMessage.success(`已生成 ${skuList.value.length} 个SKU，请设置每个SKU的价格和库存`)
 }
 
 /**
@@ -530,6 +505,24 @@ const handleSubmit = async () => {
     // 表单验证
     await productFormRef.value.validate()
     
+    // 验证SKU数据
+    if (skuList.value.length > 0) {
+      for (const sku of skuList.value) {
+        if (sku.stock === null || sku.stock === undefined) {
+          ElMessage.warning(`SKU "${sku.skuName}" 的库存不能为空`)
+          return
+        }
+        if (!sku.price || sku.price === 0) {
+          ElMessage.warning(`SKU "${sku.skuName}" 的价格不能为空或为0`)
+          return
+        }
+        if (!sku.originalPrice || sku.originalPrice === 0) {
+          ElMessage.warning(`SKU "${sku.skuName}" 的原价不能为空或为0`)
+          return
+        }
+      }
+    }
+    
     submitting.value = true
     
     // 转换状态：字符串 -> 数字
@@ -539,13 +532,30 @@ const handleSubmit = async () => {
       'inactive': 0
     }
     
+    // 从SKU中获取商品价格（取第一个SKU的价格）
+    let productPrice = 0
+    let productOriginalPrice = 0
+    if (skuList.value.length > 0) {
+      productPrice = skuList.value[0].price || 0
+      productOriginalPrice = skuList.value[0].originalPrice || 0
+    }
+    
     const data = {
       ...productForm,
+      price: productPrice,
+      originalPrice: productOriginalPrice,
       status: statusMap[productForm.status] || 0,
       images: JSON.stringify(productForm.images),
       specs: productForm.specs && productForm.specs.length > 0 ? JSON.stringify(productForm.specs) : null,
       coverImage: productForm.images[0] || '',
-      skus: skuList.value.length > 0 ? skuList.value : null
+      skus: skuList.value.length > 0 ? skuList.value.map(sku => ({
+        skuCode: sku.skuCode,
+        skuName: sku.skuName,
+        attributes: sku.attributes,
+        price: sku.price,
+        originalPrice: sku.originalPrice,
+        stock: sku.stock
+      })) : null
     }
     
     if (isEdit.value) {

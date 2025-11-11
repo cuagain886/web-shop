@@ -83,14 +83,26 @@ public class ProductController {
      */
     @GetMapping("/{productId}")
     @Operation(summary = "获取商品详情", description = "根据商品ID获取商品详细信息")
-    public Result<Product> getProductDetail(
+    public Result<java.util.Map<String, Object>> getProductDetail(
             @Parameter(description = "商品ID", required = true, example = "1")
             @PathVariable Long productId) {
         log.info("获取商品详情：productId={}", productId);
 
         Product product = productService.getProductDetail(productId);
+        
+        // 获取商品的SKU列表
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ProductSku> wrapper =
+            new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        wrapper.eq(ProductSku::getProductId, productId);
+        wrapper.eq(ProductSku::getStatus, 1);
+        List<ProductSku> skus = productSkuService.list(wrapper);
+        
+        // 构建返回数据
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.putAll(objectMapper.convertValue(product, new TypeReference<java.util.Map<String, Object>>() {}));
+        result.put("skus", skus);
 
-        return Result.success(product);
+        return Result.success(result);
     }
 
     /**

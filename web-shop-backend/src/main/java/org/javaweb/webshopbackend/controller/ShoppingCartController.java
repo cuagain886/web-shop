@@ -130,8 +130,25 @@ public class ShoppingCartController {
         Boolean checked = request.get("checked");
         log.info("切换购物车商品选中状态：cartId={}, checked={}", cartId, checked);
         
-        // 这里需要更新购物车的选中状态，但ShoppingCart实体可能没有checked字段
-        // 暂时返回成功，实际应该在Service层实现
+        cartService.updateChecked(cartId, checked ? 1 : 0);
+        
+        return Result.success("状态更新成功");
+    }
+
+    /**
+     * 全选/取消全选购物车商品
+     */
+    @PutMapping("/toggle-all")
+    @Operation(summary = "全选/取消全选", description = "全选或取消全选用户购物车中的所有商品")
+    public Result<Void> toggleAllCartItems(
+            @Parameter(description = "用户ID", required = true, example = "1")
+            @RequestParam Long userId,
+            @RequestBody Map<String, Boolean> request) {
+        Boolean checked = request.get("checked");
+        log.info("全选/取消全选购物车：userId={}, checked={}", userId, checked);
+        
+        cartService.updateAllChecked(userId, checked ? 1 : 0);
+        
         return Result.success("状态更新成功");
     }
 

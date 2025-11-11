@@ -132,7 +132,7 @@
             status,
             is_hot,
             is_recommend,
-            is_flash_sale,
+            is_flash_sale AS isFlashSale,
             deleted,
             created_time,
             updated_time

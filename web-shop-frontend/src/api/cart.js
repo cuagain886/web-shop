@@ -87,9 +87,13 @@ export function toggleCartItem(id, checked) {
  * 全选/取消全选购物车商品
  */
 export function toggleAllCartItems(checked) {
+  const userStore = useUserStore()
+  const userId = userStore.userInfo?.id || userStore.userInfo?.userId || 1
+  
   return request({
     url: '/cart/toggle-all',
     method: 'put',
+    params: { userId },
     data: { checked }
   })
 }
