@@ -20,7 +20,7 @@ export function getCartList() {
 
 /**
  * 添加商品到购物车
- * data: { productId, name, price, image, specs, quantity, stock }
+ * data: { productId, skuId, name, price, image, specs, quantity, stock }
  */
 export function addToCart(data) {
   const userStore = useUserStore()
@@ -29,6 +29,7 @@ export function addToCart(data) {
   const cartData = {
     userId: userId,
     productId: data.productId,
+    skuId: data.skuId,
     quantity: data.quantity,
     specInfo: JSON.stringify(data.specs || {})
   }

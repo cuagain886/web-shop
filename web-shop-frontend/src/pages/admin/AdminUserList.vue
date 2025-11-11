@@ -155,6 +155,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, RefreshRight } from '@element-plus/icons-vue'
+import { getUserList, disableUser, enableUser } from '@/api/user'
 
 const loading = ref(false)
 const userList = ref([])
@@ -172,70 +173,27 @@ const pagination = reactive({
   total: 0
 })
 
-// Mock数据
-const mockUsers = [
-  {
-    id: 1,
-    username: 'user001',
-    nickname: '张三',
-    phone: '13800138000',
-    email: 'zhangsan@example.com',
-    avatar: '',
-    status: 'active',
-    createdAt: '2024-01-15 10:30:00'
-  },
-  {
-    id: 2,
-    username: 'user002',
-    nickname: '李四',
-    phone: '13800138001',
-    email: 'lisi@example.com',
-    avatar: '',
-    status: 'active',
-    createdAt: '2024-02-20 14:20:00'
-  },
-  {
-    id: 3,
-    username: 'test',
-    nickname: '测试用户',
-    phone: '13800138002',
-    email: 'test@example.com',
-    avatar: '',
-    status: 'active',
-    createdAt: '2024-03-10 09:15:00'
-  }
-]
-
 /**
  * 获取用户列表
  */
-const fetchUsers = () => {
+const fetchUsers = async () => {
   try {
     loading.value = true
     
-    // Mock实现
-    let filteredUsers = [...mockUsers]
-    
-    // 关键词筛选
-    if (filterForm.keyword) {
-      filteredUsers = filteredUsers.filter(user => 
-        user.username.includes(filterForm.keyword) ||
-        user.nickname.includes(filterForm.keyword) ||
-        user.phone.includes(filterForm.keyword)
-      )
+    const params = {
+      pageNum: pagination.page,
+      pageSize: pagination.pageSize,
+      keyword: filterForm.keyword || undefined,
+      status: filterForm.status === 'active' ? 1 : filterForm.status === 'disabled' ? 0 : undefined
     }
     
-    // 状态筛选
-    if (filterForm.status) {
-      filteredUsers = filteredUsers.filter(user => user.status === filterForm.status)
-    }
-    
-    pagination.total = filteredUsers.length
-    
-    // 分页
-    const start = (pagination.page - 1) * pagination.pageSize
-    const end = start + pagination.pageSize
-    userList.value = filteredUsers.slice(start, end)
+    const res = await getUserList(params)
+    userList.value = res.records.map(user => ({
+      ...user,
+      status: user.status === 1 ? 'active' : 'disabled',
+      createdAt: user.createdTime
+    }))
+    pagination.total = res.total
   } catch (error) {
     console.error('获取用户列表失败:', error)
     ElMessage.error('获取用户列表失败')
@@ -295,17 +253,13 @@ const handleDisableUser = async (id) => {
       type: 'warning'
     })
     
-    // Mock实现
-    const user = mockUsers.find(u => u.id === id)
-    if (user) {
-      user.status = 'disabled'
-    }
-    
+    await disableUser(id)
     ElMessage.success('用户已禁用')
     fetchUsers()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('禁用用户失败:', error)
+      ElMessage.error('禁用用户失败')
     }
   }
 }
@@ -315,12 +269,7 @@ const handleDisableUser = async (id) => {
  */
 const handleEnableUser = async (id) => {
   try {
-    // Mock实现
-    const user = mockUsers.find(u => u.id === id)
-    if (user) {
-      user.status = 'active'
-    }
-    
+    await enableUser(id)
     ElMessage.success('用户已启用')
     fetchUsers()
   } catch (error) {

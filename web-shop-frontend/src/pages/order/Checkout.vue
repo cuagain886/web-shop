@@ -376,6 +376,7 @@ const handleSubmitOrder = async () => {
       addressId: selectedAddress.value.id,
       items: orderItems.value.map(item => ({
         productId: item.productId,
+        skuId: item.skuId,
         quantity: item.quantity
       })),
       note: ''
@@ -422,6 +423,7 @@ onMounted(async () => {
       orderItems.value = [{
         id: item.productId,
         productId: item.productId,
+        skuId: item.skuId,
         productName: item.name,
         image: item.image,
         specs: JSON.stringify(item.specs),

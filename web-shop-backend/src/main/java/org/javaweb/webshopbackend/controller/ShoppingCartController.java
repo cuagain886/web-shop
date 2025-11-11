@@ -49,9 +49,9 @@ public class ShoppingCartController {
     @PostMapping
     @Operation(summary = "添加商品到购物车", description = "将商品添加到用户购物车")
     public Result<Void> addToCart(@RequestBody ShoppingCart cart) {
-        log.info("添加商品到购物车：userId={}, productId={}", cart.getUserId(), cart.getProductId());
+        log.info("添加商品到购物车：userId={}, productId={}, skuId={}", cart.getUserId(), cart.getProductId(), cart.getSkuId());
 
-        cartService.addToCart(cart.getUserId(), cart.getProductId(), cart.getQuantity(), cart.getSpecInfo());
+        cartService.addToCart(cart.getUserId(), cart.getProductId(), cart.getQuantity(), cart.getSpecInfo(), cart.getSkuId());
 
         return Result.success("添加成功");
     }

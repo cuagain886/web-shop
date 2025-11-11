@@ -110,13 +110,18 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             orderItem.setProductName(product.getName());
             orderItem.setProductImage(product.getCoverImage());
             orderItem.setSpecInfo(cartItem.getSpecInfo());
+            orderItem.setSkuId(cartItem.getSkuId());  // 保存SKU ID
             orderItem.setUnitPrice(product.getPrice());
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setTotalPrice(product.getPrice().multiply(new BigDecimal(cartItem.getQuantity())));
             orderItem.setIsReviewed(0);
             orderItemService.save(orderItem);
 
+            // 减少商品库存和SKU库存
             productService.updateProductStock(product.getId(), -cartItem.getQuantity());
+            if (cartItem.getSkuId() != null) {
+                productService.updateSkuStock(cartItem.getSkuId(), -cartItem.getQuantity());
+            }
         }
 
         // 6. 清除购物车
@@ -176,13 +181,18 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             orderItem.setProductName(product.getName());
             orderItem.setProductImage(product.getCoverImage());
             orderItem.setSpecInfo("");
+            orderItem.setSkuId(item.getSkuId());  // 保存SKU ID
             orderItem.setUnitPrice(product.getPrice());
             orderItem.setQuantity(item.getQuantity());
             orderItem.setTotalPrice(product.getPrice().multiply(new BigDecimal(item.getQuantity())));
             orderItem.setIsReviewed(0);
             orderItemService.save(orderItem);
 
+            // 减少商品库存和SKU库存
             productService.updateProductStock(product.getId(), -item.getQuantity());
+            if (item.getSkuId() != null) {
+                productService.updateSkuStock(item.getSkuId(), -item.getQuantity());
+            }
         }
 
         log.info("订单创建成功：orderNo={}, totalAmount={}", order.getOrderNo(), totalAmount);
@@ -252,6 +262,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         List<OrderItem> orderItems = orderItemService.getByOrderId(order.getId());
         for (OrderItem item : orderItems) {
             productService.updateProductStock(item.getProductId(), item.getQuantity());
+            if (item.getSkuId() != null) {
+                productService.updateSkuStock(item.getSkuId(), item.getQuantity());
+            }
         }
 
         // 5. 更新订单状态
@@ -279,6 +292,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         List<OrderItem> orderItems = orderItemService.getByOrderId(order.getId());
         for (OrderItem item : orderItems) {
             productService.updateProductStock(item.getProductId(), item.getQuantity());
+            if (item.getSkuId() != null) {
+                productService.updateSkuStock(item.getSkuId(), item.getQuantity());
+            }
         }
 
         // 更新订单状态

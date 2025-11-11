@@ -127,8 +127,16 @@ public interface ProductService extends IService<Product> {
     void updateProductStock(Long productId, Integer quantity);
 
     /**
+     * 更新SKU库存（增量更新）
+     *
+     * @param skuId SKU ID
+     * @param quantity 库存变化量（正数增加，负数减少）
+     */
+    void updateSkuStock(Long skuId, Integer quantity);
+
+    /**
      * 设置商品库存（绝对值）
-     * 
+     *
      * @param productId 商品ID
      * @param stock 库存数量
      */

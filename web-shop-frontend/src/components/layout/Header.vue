@@ -4,7 +4,7 @@
       <!-- Logo -->
       <div class="logo">
         <span class="logo-icon">🛒</span>
-        <span class="logo-text">京东风格购物</span>
+        <span class="logo-text">Web-Shop</span>
       </div>
 
       <!-- 搜索框 -->

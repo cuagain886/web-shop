@@ -53,6 +53,7 @@ export const useCartStore = defineStore('cart', () => {
       cartList.value = data.map(item => ({
         id: item.id,
         productId: item.productId,
+        skuId: item.skuId,
         name: item.product?.name || '未知商品',
         price: item.product?.price || 0,
         image: item.product?.coverImage || item.product?.image || '',

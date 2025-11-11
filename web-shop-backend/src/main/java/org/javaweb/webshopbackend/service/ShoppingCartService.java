@@ -15,13 +15,14 @@ public interface ShoppingCartService extends IService<ShoppingCart> {
 
     /**
      * 添加到购物车
-     * 
+     *
      * @param userId 用户ID
      * @param productId 商品ID
      * @param quantity 数量
      * @param specInfo 规格信息
+     * @param skuId SKU ID
      */
-    void addToCart(Long userId, Long productId, Integer quantity, String specInfo);
+    void addToCart(Long userId, Long productId, Integer quantity, String specInfo, Long skuId);
 
     /**
      * 获取购物车列表（带商品信息）

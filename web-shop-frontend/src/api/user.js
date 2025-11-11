@@ -148,20 +148,29 @@ export function logout() {
  */
 export function getUserList(params) {
   return request({
-    url: '/admin/users',
+    url: '/user/list',
     method: 'get',
     params
   })
 }
 
 /**
- * 更新用户状态（管理端）
+ * 禁用用户（管理端）
  */
-export function updateUserStatus(id, data) {
+export function disableUser(userId) {
   return request({
-    url: `/admin/users/${id}/status`,
-    method: 'put',
-    data
+    url: `/user/${userId}/disable`,
+    method: 'put'
+  })
+}
+
+/**
+ * 启用用户（管理端）
+ */
+export function enableUser(userId) {
+  return request({
+    url: `/user/${userId}/enable`,
+    method: 'put'
   })
 }
 

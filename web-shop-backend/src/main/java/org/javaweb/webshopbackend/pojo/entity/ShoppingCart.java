@@ -35,6 +35,11 @@ public class ShoppingCart implements Serializable {
     private Long productId;
 
     /**
+     * 关联SKU ID
+     */
+    private Long skuId;
+
+    /**
      * 规格信息（如："颜色:红色,尺寸:XL"）
      */
     private String specInfo;

@@ -7,7 +7,10 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.mapper.ProductMapper;
 import org.javaweb.webshopbackend.pojo.entity.Product;
+import org.javaweb.webshopbackend.pojo.entity.ProductSku;
 import org.javaweb.webshopbackend.service.ProductService;
+import org.javaweb.webshopbackend.service.ProductSkuService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +27,10 @@ import java.util.List;
 @Service
 public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> implements ProductService {
 
-    @Override
+     @Autowired
+     private ProductSkuService productSkuService;
+
+     @Override
     public IPage<Product> getProductPage(Page<Product> page, Long categoryId, String keyword,
                                          BigDecimal minPrice, BigDecimal maxPrice, String sortBy) {
         log.info("分页查询商品：categoryId={}, keyword={}, sortBy={}", categoryId, keyword, sortBy);
@@ -189,6 +195,21 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
         baseMapper.updateStock(productId, quantity);
 
         log.info("库存更新成功");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSkuStock(Long skuId, Integer quantity) {
+        log.info("更新SKU库存（增量）：skuId={}, quantity={}", skuId, quantity);
+
+        ProductSku sku = productSkuService.getById(skuId);
+        if (sku != null) {
+            sku.setStock(sku.getStock() + quantity);
+            productSkuService.updateById(sku);
+            log.info("SKU库存更新成功");
+        } else {
+            log.warn("SKU不存在：skuId={}", skuId);
+        }
     }
 
     @Override

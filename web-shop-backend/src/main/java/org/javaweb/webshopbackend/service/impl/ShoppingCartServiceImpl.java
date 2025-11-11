@@ -29,8 +29,8 @@ public class ShoppingCartServiceImpl extends ServiceImpl<ShoppingCartMapper, Sho
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addToCart(Long userId, Long productId, Integer quantity, String specInfo) {
-        log.info("添加到购物车：userId={}, productId={}, quantity={}", userId, productId, quantity);
+    public void addToCart(Long userId, Long productId, Integer quantity, String specInfo, Long skuId) {
+        log.info("添加到购物车：userId={}, productId={}, quantity={}, skuId={}", userId, productId, quantity, skuId);
 
         // 1. 检查商品是否存在且上架
         Product product = productService.getById(productId);
@@ -72,6 +72,7 @@ public class ShoppingCartServiceImpl extends ServiceImpl<ShoppingCartMapper, Sho
             cartItem = new ShoppingCart();
             cartItem.setUserId(userId);
             cartItem.setProductId(productId);
+            cartItem.setSkuId(skuId);
             cartItem.setQuantity(quantity);
             cartItem.setSpecInfo(specInfo);
             cartItem.setChecked(1);  // 默认选中

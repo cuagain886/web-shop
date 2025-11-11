@@ -45,6 +45,9 @@ public class OrderCreateDTO {
         @NotNull(message = "商品ID不能为空")
         private Long productId;
 
+        @Schema(description = "SKU ID", example = "1")
+        private Long skuId;
+
         @Schema(description = "购买数量", example = "2")
         @NotNull(message = "购买数量不能为空")
         private Integer quantity;

@@ -314,38 +314,47 @@ const isSpecSelected = (specName, value) => {
 
 // 选择规格
 const selectSpec = (specName, value, option) => {
-  console.log('🔍 选择规格前的option对象:', option)
-  console.log('🔍 option.stock:', option.stock)
-  
-  if (!option.stock || option.stock === 0) {
-    ElMessage.warning('该规格暂无库存')
-    return
-  }
+   console.log('🔍 选择规格前的option对象:', option)
+   console.log('🔍 option.stock:', option.stock)
+   
+   if (!option.stock || option.stock === 0) {
+     ElMessage.warning('该规格暂无库存')
+     return
+   }
 
-  selectedSpecs.value[specName] = value
-  
-  // 如果所有规格都已选择，查找对应的SKU
-  if (allSpecsSelected.value) {
-    const sku = findSkuBySpecs(selectedSpecs.value)
-    if (sku) {
-      console.log('✅ 找到对应的SKU:', sku)
-      selectedSpec.value = {
-        stock: sku.stock,
-        price: sku.price,
-        skuId: sku.id,
-        skuCode: sku.skuCode
-      }
-    } else {
-      console.log('⚠️ 未找到对应的SKU，使用选项的库存')
-      selectedSpec.value = { ...option }
-    }
-  } else {
-    // 规格未完全选择，使用选项的库存
-    selectedSpec.value = { ...option }
-  }
-  
-  console.log('✅ 选择规格后的selectedSpec.value:', selectedSpec.value)
-  console.log('✅ currentStock计算值:', currentStock.value)
+   selectedSpecs.value[specName] = value
+   
+   // 如果所有规格都已选择，查找对应的SKU
+   if (allSpecsSelected.value) {
+     const sku = findSkuBySpecs(selectedSpecs.value)
+     if (sku) {
+       console.log('✅ 找到对应的SKU:', sku)
+       selectedSpec.value = {
+         stock: sku.stock,
+         price: sku.price,
+         skuId: sku.id,
+         skuCode: sku.skuCode
+       }
+     } else {
+       console.log('⚠️ 未找到对应的SKU，使用选项的库存')
+       // 使用选项的总库存和第一个SKU的ID
+       selectedSpec.value = {
+         stock: option.stock || 0,
+         price: option.price || product.value.price,
+         skuId: option.skus && option.skus.length > 0 ? option.skus[0].id : null
+       }
+     }
+   } else {
+     // 规格未完全选择，使用选项的总库存和第一个SKU的ID
+     selectedSpec.value = {
+       stock: option.stock || 0,
+       price: option.price || product.value.price,
+       skuId: option.skus && option.skus.length > 0 ? option.skus[0].id : null
+     }
+   }
+   
+   console.log('✅ 选择规格后的selectedSpec.value:', selectedSpec.value)
+   console.log('✅ currentStock计算值:', currentStock.value)
 }
 
 // 根据规格查找对应的SKU
@@ -379,67 +388,69 @@ const findSkuBySpecs = (specs) => {
 
 // 加入购物车
 const handleAddToCart = async () => {
-  if (!allSpecsSelected.value) {
-    ElMessage.warning('请选择完整的商品规格')
-    return
-  }
+   if (!allSpecsSelected.value) {
+     ElMessage.warning('请选择完整的商品规格')
+     return
+   }
 
-  if (currentStock.value === 0) {
-    ElMessage.error('商品暂无库存')
-    return
-  }
+   if (currentStock.value === 0) {
+     ElMessage.error('商品暂无库存')
+     return
+   }
 
-  try {
-    // 调用购物车API
-    await cartStore.addToCart({
-      productId: product.value.id,
-      name: product.value.name,
-      price: selectedSpec.value.price || product.value.price,
-      image: product.value.images && product.value.images.length > 0 ? product.value.images[0] : '',
-      specs: selectedSpecs.value,
-      quantity: quantity.value,
-      stock: currentStock.value
-    })
+   try {
+     // 调用购物车API
+     await cartStore.addToCart({
+       productId: product.value.id,
+       skuId: selectedSpec.value.skuId,
+       name: product.value.name,
+       price: selectedSpec.value.price || product.value.price,
+       image: product.value.images && product.value.images.length > 0 ? product.value.images[0] : '',
+       specs: selectedSpecs.value,
+       quantity: quantity.value,
+       stock: currentStock.value
+     })
 
-    ElMessage.success('已加入购物车')
-    console.log('✅ 加入购物车成功')
+     ElMessage.success('已加入购物车')
+     console.log('✅ 加入购物车成功')
 
-    // 更新购物车数量显示
-    await cartStore.updateCartCount()
-  } catch (error) {
-    console.error('❌ 加入购物车失败:', error)
-    ElMessage.error('加入购物车失败')
-  }
+     // 更新购物车数量显示
+     await cartStore.updateCartCount()
+   } catch (error) {
+     console.error('❌ 加入购物车失败:', error)
+     ElMessage.error('加入购物车失败')
+   }
 }
 
 // 立即购买
 const handleBuyNow = () => {
-  if (!allSpecsSelected.value) {
-    ElMessage.warning('请选择完整的商品规格')
-    return
-  }
+   if (!allSpecsSelected.value) {
+     ElMessage.warning('请选择完整的商品规格')
+     return
+   }
 
-  if (currentStock.value === 0) {
-    ElMessage.error('商品暂无库存')
-    return
-  }
+   if (currentStock.value === 0) {
+     ElMessage.error('商品暂无库存')
+     return
+   }
 
-  // 构建订单商品数据
-  const orderItem = {
-    productId: product.value.id,
-    name: product.value.name,
-    price: selectedSpec.value.price || product.value.price,
-    image: product.value.images && product.value.images.length > 0 ? product.value.images[0] : '',
-    specs: selectedSpecs.value,
-    quantity: quantity.value,
-    stock: currentStock.value
-  }
+   // 构建订单商品数据
+   const orderItem = {
+     productId: product.value.id,
+     skuId: selectedSpec.value.skuId,
+     name: product.value.name,
+     price: selectedSpec.value.price || product.value.price,
+     image: product.value.images && product.value.images.length > 0 ? product.value.images[0] : '',
+     specs: selectedSpecs.value,
+     quantity: quantity.value,
+     stock: currentStock.value
+   }
 
-  // 将商品信息存储到sessionStorage，供订单确认页使用
-  sessionStorage.setItem('buyNowItem', JSON.stringify(orderItem))
+   // 将商品信息存储到sessionStorage，供订单确认页使用
+   sessionStorage.setItem('buyNowItem', JSON.stringify(orderItem))
 
-  // 跳转到订单确认页
-  router.push('/checkout')
+   // 跳转到订单确认页
+   router.push('/checkout')
 }
 
 // 加载商品详情
@@ -463,19 +474,18 @@ const loadProductDetail = async () => {
     if (data.specs) {
       const specsData = typeof data.specs === 'string' ? JSON.parse(data.specs) : data.specs
       // 转换格式：[{name: '颜色', values: ['黑色', '白色']}]
-      // => [{name: '颜色', options: [{label: '黑色', value: '黑色', stock: 100, price: 100}, ...]}]
+      // => [{name: '颜色', options: [{label: '黑色', value: '黑色', skus: [{id, stock, price, ...}]}, ...]}]
       specs = specsData.map(spec => ({
         name: spec.name,
         options: spec.values.map(value => ({
           label: value,
           value: value,
-          stock: data.stock, // 使用商品总库存作为默认值
-          price: data.price  // 使用商品价格作为默认值
+          skus: [] // 存储所有匹配该规格值的SKU
         }))
       }))
     }
     
-    // 如果有SKU数据，使用SKU的库存和价格覆盖默认值
+    // 如果有SKU数据，将SKU信息关联到对应的规格选项
     if (data.skus && data.skus.length > 0) {
       console.log('🔍 开始处理SKU数据，共', data.skus.length, '个SKU')
       data.skus.forEach((sku, skuIndex) => {
@@ -484,23 +494,39 @@ const loadProductDetail = async () => {
         const skuAttrs = typeof sku.attributes === 'string' ? JSON.parse(sku.attributes) : sku.attributes
         console.log(`SKU ${skuIndex} attributes:`, skuAttrs)
         
-        // 为每个规格组找到对应的SKU选项，并更新其库存和价格
+        // 为每个规格组找到对应的SKU选项，并将SKU信息添加到skus数组
         specs.forEach(specGroup => {
           const attrValue = skuAttrs[specGroup.name]
           console.log(`查找规格 ${specGroup.name} = ${attrValue}`)
           if (attrValue) {
             const option = specGroup.options.find(opt => opt.value === attrValue)
             if (option) {
-              console.log(`找到匹配的选项，更新库存: ${option.stock} -> ${sku.stock}`)
-              // 使用SKU的库存和价格
-              option.stock = sku.stock || 0
-              option.price = sku.price || data.price
-              // 保存完整的SKU信息供后续使用
-              option.skuId = sku.id
-              option.skuCode = sku.skuCode
+              console.log(`找到匹配的选项，添加SKU信息`)
+              // 将SKU信息添加到该规格选项的skus数组
+              option.skus.push({
+                id: sku.id,
+                stock: sku.stock || 0,
+                price: sku.price || data.price,
+                skuCode: sku.skuCode,
+                attributes: skuAttrs
+              })
             } else {
               console.log(`未找到匹配的选项，规格值: ${attrValue}`)
             }
+          }
+        })
+      })
+      
+      // 计算每个规格选项的总库存（所有匹配SKU的库存之和）
+      specs.forEach(specGroup => {
+        specGroup.options.forEach(option => {
+          if (option.skus && option.skus.length > 0) {
+            option.stock = option.skus.reduce((sum, sku) => sum + sku.stock, 0)
+            option.price = option.skus[0].price // 使用第一个SKU的价格
+            console.log(`规格选项 ${option.value} 的总库存: ${option.stock}`)
+          } else {
+            option.stock = data.stock || 0
+            option.price = data.price
           }
         })
       })
