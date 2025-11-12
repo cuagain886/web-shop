@@ -21,7 +21,7 @@
 
         <!-- 中间轮播图 -->
         <div class="jd-banner">
-          <el-carousel height="470px" indicator-position="outside">
+          <el-carousel height="480px" indicator-position="outside">
             <el-carousel-item v-for="item in banners" :key="item.id">
               <div class="banner-item" :style="{ background: item.color }">
                 <div class="banner-text">
@@ -34,14 +34,23 @@
         </div>
 
         <!-- 右侧信息栏 -->
-        <aside class="jd-sidebar">
-          <div class="sidebar-card">
-            <div class="news-title">📢 公告</div>
-            <div class="news-item">双11狂欢即将开始</div>
-            <div class="news-item">新用户专享优惠</div>
-            <div class="news-item">全场包邮活动</div>
-          </div>
-        </aside>
+         <aside class="jd-sidebar">
+           <div class="sidebar-card">
+             <div class="news-title">📢 公告</div>
+             <div v-if="announcements.length > 0" class="announcements-list">
+               <div
+                 v-for="item in announcements.slice(0, 5)"
+                 :key="item.id"
+                 class="news-item"
+                 :title="item.title"
+               >
+                 <span v-if="item.isTop === 1" class="top-badge">置顶</span>
+                 {{ item.title }}
+               </div>
+             </div>
+             <div v-else class="news-item">暂无公告</div>
+           </div>
+         </aside>
       </div>
     </div>
 
@@ -109,6 +118,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getFlashSaleProducts, getRecommendProducts } from '@/api/product'
+import { getPublishedAnnouncements } from '@/api/announcement'
 
 console.log('🎉 Home页面开始加载')
 
@@ -167,6 +177,9 @@ const seckillProducts = ref([])
 // 推荐商品
 const recommendProducts = ref([])
 
+// 公告列表
+const announcements = ref([])
+
 // 获取秒杀商品
 const fetchFlashSaleProducts = async () => {
   try {
@@ -216,9 +229,26 @@ const fetchRecommendProducts = async () => {
   }
 }
 
+// 获取公告
+const fetchAnnouncements = async () => {
+  try {
+    const response = await getPublishedAnnouncements()
+    console.log('📢 获取公告响应:', response)
+    // response 已经是数据数组，因为request.js的拦截器返回了res.data
+    if (Array.isArray(response)) {
+      announcements.value = response
+    } else {
+      announcements.value = []
+    }
+  } catch (error) {
+    console.error('❌ 获取公告失败:', error)
+  }
+}
+
 onMounted(() => {
   fetchFlashSaleProducts()
   fetchRecommendProducts()
+  fetchAnnouncements()
 })
 </script>
 
@@ -238,9 +268,10 @@ onMounted(() => {
 /* 主要内容区 */
 .jd-main {
   display: grid;
-  grid-template-columns: 200px 1fr 270px;
+  grid-template-columns: 180px 1fr 260px;
   gap: 10px;
   margin-bottom: 20px;
+  align-items: start;
 }
 
 /* 左侧分类 */
@@ -289,7 +320,7 @@ onMounted(() => {
 }
 
 .banner-item {
-  height: 470px;
+  height: 480px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -319,6 +350,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 4px;
   padding: 20px;
+  min-height: 480px;
 }
 
 .news-title {
@@ -341,6 +373,23 @@ onMounted(() => {
 
 .news-item:last-child {
   border-bottom: none;
+}
+
+.announcements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.top-badge {
+  display: inline-block;
+  background-color: #e4393c;
+  color: white;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  margin-right: 5px;
+  font-weight: bold;
 }
 
 /* 秒杀区 */

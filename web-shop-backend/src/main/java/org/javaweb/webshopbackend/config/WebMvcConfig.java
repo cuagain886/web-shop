@@ -43,6 +43,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/product/**",
                         "/api/category/**",
                         "/api/file/**",
+                        "/api/announcements/published",
+                        "/api/announcements/page",
                         "/doc.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",

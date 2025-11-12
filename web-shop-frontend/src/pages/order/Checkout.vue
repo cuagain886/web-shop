@@ -74,11 +74,11 @@
         </div>
         <div class="summary-row">
           <span class="summary-label">运费：</span>
-          <span class="summary-value">¥0.00</span>
+          <span class="summary-value">¥{{ freight.toFixed(2) }}</span>
         </div>
         <div class="summary-row total-row">
           <span class="summary-label">应付总额：</span>
-          <span class="summary-value total-amount">¥{{ totalAmount.toFixed(2) }}</span>
+          <span class="summary-value total-amount">¥{{ payAmount.toFixed(2) }}</span>
         </div>
       </div>
 
@@ -86,7 +86,7 @@
       <div class="submit-section">
         <div class="submit-info">
           <span>应付总额：</span>
-          <span class="total-price">¥{{ totalAmount.toFixed(2) }}</span>
+          <span class="total-price">¥{{ payAmount.toFixed(2) }}</span>
         </div>
         <el-button
           type="danger"
@@ -200,6 +200,7 @@ import { useCartStore } from '@/stores/cartStore'
 import { useOrderStore } from '@/stores/orderStore'
 import { useUserStore } from '@/stores/userStore'
 import { getAddressList, addAddress } from '@/api/address'
+import { getSettings } from '@/api/settings'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -220,9 +221,25 @@ const addressFormRef = ref(null)
 // 订单商品列表（从购物车或立即购买获取）
 const orderItems = ref([])
 
-// 订单总金额
+// 运费
+const freight = ref(0)
+
+// 商品总金额
 const totalAmount = computed(() => {
-  return orderItems.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const amount = orderItems.value.reduce((sum, item) => {
+    const itemPrice = parseFloat(item.price) || 0
+    const itemQuantity = parseInt(item.quantity) || 1
+    return sum + (itemPrice * itemQuantity)
+  }, 0)
+  console.log('💰 计算商品总金额:', { items: orderItems.value, totalAmount: amount })
+  return amount
+})
+
+// 应付总额（商品总价 + 运费）
+const payAmount = computed(() => {
+  const total = totalAmount.value + (parseFloat(freight.value) || 0)
+  console.log('💰 计算应付总额:', { totalAmount: totalAmount.value, freight: freight.value, payAmount: total })
+  return total
 })
 
 // 新增地址表单
@@ -391,7 +408,7 @@ const handleSubmitOrder = async () => {
     const itemIds = orderItems.value.map(item => item.id)
     await cartStore.batchDelete(itemIds)
     
-    // 跳转到订单详情页
+    // 跳转到订单详情页（用户可在详情页手动支付）
     router.push(`/order/${order.id}`)
   } catch (error) {
     if (error !== 'cancel') {
@@ -427,9 +444,10 @@ onMounted(async () => {
         productName: item.name,
         image: item.image,
         specs: JSON.stringify(item.specs),
-        price: item.price,
-        quantity: item.quantity
+        price: parseFloat(item.price) || 0,
+        quantity: parseInt(item.quantity) || 1
       }]
+      console.log('📦 立即购买商品信息:', orderItems.value)
       // 清除sessionStorage
       sessionStorage.removeItem('buyNowItem')
     } catch (error) {
@@ -445,11 +463,26 @@ onMounted(async () => {
       router.push('/cart')
       return
     }
-    orderItems.value = cartStore.checkedItems
+    // 确保价格和数量是正确的数值类型
+    orderItems.value = cartStore.checkedItems.map(item => ({
+      ...item,
+      price: parseFloat(item.price) || 0,
+      quantity: parseInt(item.quantity) || 1
+    }))
+    console.log('📦 购物车结算商品信息:', orderItems.value)
   }
 
   // 获取地址列表
   await fetchAddressList()
+  
+  // 获取系统设置（运费）
+  try {
+    const settings = await getSettings()
+    freight.value = parseFloat(settings.defaultShipping) || 0
+    console.log('📦 系统运费:', freight.value)
+  } catch (error) {
+    console.error('获取系统设置失败:', error)
+  }
 })
 </script>
 

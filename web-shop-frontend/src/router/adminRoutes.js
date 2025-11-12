@@ -91,6 +91,12 @@ export default [
         name: 'AdminSettings',
         component: () => import('@/pages/admin/AdminSettings.vue'),
         meta: { title: '系统设置', requiresAuth: true, requiresMerchant: true }
+      },
+      {
+        path: 'announcements',
+        name: 'AdminAnnouncementManage',
+        component: () => import('@/pages/admin/AdminAnnouncementManage.vue'),
+        meta: { title: '公告管理', requiresAuth: true, requiresMerchant: true }
       }
     ]
   }

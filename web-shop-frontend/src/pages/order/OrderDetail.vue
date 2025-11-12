@@ -120,12 +120,31 @@
           </div>
           <div class="price-row">
             <span class="price-label">运费：</span>
-            <span class="price-value">¥0.00</span>
+            <span class="price-value">¥{{ (order.freight || 0).toFixed(2) }}</span>
           </div>
           <div class="price-row total-row">
             <span class="price-label">实付款：</span>
-            <span class="price-value total-amount">¥{{ order.totalAmount.toFixed(2) }}</span>
+            <span class="price-value total-amount">¥{{ (order.payAmount || order.totalAmount).toFixed(2) }}</span>
           </div>
+        </div>
+
+        <!-- 支付方式选择 -->
+        <div v-if="order.status === 0" class="payment-method-section">
+          <h3 class="section-title">选择支付方式</h3>
+          <el-radio-group v-model="selectedPaymentMethod" class="payment-methods">
+            <el-radio :label="1" class="payment-option">
+              <div class="payment-label">
+                <span class="payment-icon">💚</span>
+                <span>微信支付</span>
+              </div>
+            </el-radio>
+            <el-radio :label="2" class="payment-option">
+              <div class="payment-label">
+                <span class="payment-icon">💙</span>
+                <span>支付宝</span>
+              </div>
+            </el-radio>
+          </el-radio-group>
         </div>
 
         <!-- 操作按钮 -->
@@ -181,6 +200,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useOrderStore } from '@/stores/orderStore'
 import { applyRefund } from '@/api/order'
+import { getSettings } from '@/api/settings'
 
 const route = useRoute()
 const router = useRouter()
@@ -192,6 +212,7 @@ const paying = ref(false)
 const cancelling = ref(false)
 const confirming = ref(false)
 const refunding = ref(false)
+const selectedPaymentMethod = ref(1)  // 1=微信支付, 2=支付宝
 
 // 当前步骤（根据订单状态计算）
 const currentStep = computed(() => {
@@ -238,10 +259,8 @@ const handlePay = async () => {
 
     paying.value = true
     
-    // 模拟支付
-    const updatedOrder = await orderStore.payOrder(order.value.id, {
-      paymentMethod: order.value.paymentMethod
-    })
+    // 支付订单，使用选择的支付方式
+    const updatedOrder = await orderStore.payOrder(order.value.id, selectedPaymentMethod.value)
     
     order.value = updatedOrder
     ElMessage.success('支付成功')
@@ -572,6 +591,40 @@ onMounted(() => {
 
 .total-amount {
   color: #ff4d4f;
+  font-size: 24px;
+}
+
+/* 支付方式选择 */
+.payment-method-section {
+  padding: 20px;
+}
+
+.payment-methods {
+  display: flex;
+  gap: 20px;
+}
+
+.payment-option {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.payment-option:hover {
+  border-color: #409eff;
+  background-color: #f0f9ff;
+}
+
+.payment-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+}
+
+.payment-icon {
   font-size: 24px;
 }
 

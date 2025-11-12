@@ -87,7 +87,7 @@ public class OrdersController {
      */
     @PutMapping("/{orderNo}/pay")
     @Operation(summary = "支付订单", description = "用户支付订单")
-    public Result<Void> payOrder(
+    public Result<Orders> payOrder(
             @Parameter(description = "订单号", required = true, example = "ORDER123456")
             @PathVariable String orderNo,
             @Parameter(description = "用户ID", required = true, example = "1")
@@ -96,9 +96,9 @@ public class OrdersController {
             @RequestParam Integer paymentMethod) {
         log.info("支付订单：orderNo={}, userId={}, paymentMethod={}", orderNo, userId, paymentMethod);
 
-        ordersService.payOrder(orderNo, userId, paymentMethod);
+        Orders order = ordersService.payOrder(orderNo, userId, paymentMethod);
 
-        return Result.success("支付成功");
+        return Result.success("支付成功", order);
     }
 
     /**

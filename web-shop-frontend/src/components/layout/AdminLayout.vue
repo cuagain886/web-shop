@@ -49,6 +49,11 @@
             <el-icon><Setting /></el-icon>
             <template #title>系统设置</template>
           </el-menu-item>
+
+          <el-menu-item index="/admin/announcements">
+            <el-icon><Document /></el-icon>
+            <template #title>公告管理</template>
+          </el-menu-item>
         </el-menu>
       </el-aside>
 
@@ -151,7 +156,8 @@ const breadcrumbs = computed(() => {
     '/admin/profile': '个人信息',
     '/admin/security': '安全设置',
     '/admin/users': '用户管理',
-    '/admin/settings': '系统设置'
+    '/admin/settings': '系统设置',
+    '/admin/announcements': '公告管理'
   }
   
   const crumbs = []

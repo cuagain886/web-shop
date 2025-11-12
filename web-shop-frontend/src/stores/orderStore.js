@@ -152,7 +152,7 @@ export const useOrderStore = defineStore('order', () => {
   /**
    * 支付订单
    */
-  const payOrder = async (orderId, paymentData) => {
+  const payOrder = async (orderId, paymentMethod = 1) => {
     try {
       loading.value = true
       
@@ -164,9 +164,9 @@ export const useOrderStore = defineStore('order', () => {
       
       const userStore = useUserStore()
       const userId = userStore.userInfo?.id || userStore.userInfo?.userId
-      const paymentMethod = paymentData?.paymentMethod || 1
       
-      const updatedOrder = await payOrderApi(order.orderNo, userId, paymentMethod)
+      const result = await payOrderApi(order.orderNo, userId, paymentMethod)
+      const updatedOrder = result.data || result
       const transformedOrder = transformOrder(updatedOrder)
       
       // 更新列表中的订单状态

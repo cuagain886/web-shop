@@ -97,12 +97,13 @@ public interface OrdersService extends IService<Orders> {
 
     /**
      * 支付订单
-     * 
+     *
      * @param orderNo 订单号
      * @param userId 用户ID（验证权限）
      * @param paymentMethod 支付方式（1-微信，2-支付宝）
+     * @return 更新后的订单
      */
-    void payOrder(String orderNo, Long userId, Integer paymentMethod);
+    Orders payOrder(String orderNo, Long userId, Integer paymentMethod);
 
     /**
      * 发货

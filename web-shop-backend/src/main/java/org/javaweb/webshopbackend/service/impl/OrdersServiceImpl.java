@@ -36,6 +36,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
     private ProductService productService;
 
     @Autowired
+    private ProductSkuService productSkuService;
+
+    @Autowired
     private OrderItemService orderItemService;
 
     @Autowired
@@ -161,7 +164,18 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             if (!productService.checkStock(product.getId(), item.getQuantity())) {
                 throw new IllegalArgumentException("商品 " + product.getName() + " 库存不足");
             }
-            BigDecimal itemTotal = product.getPrice().multiply(new BigDecimal(item.getQuantity()));
+            
+            // 获取SKU价格，如果没有SKU则使用商品价格
+            BigDecimal itemPrice = product.getPrice();
+            if (item.getSkuId() != null) {
+                ProductSku sku = productSkuService.getById(item.getSkuId());
+                if (sku != null && sku.getPrice() != null) {
+                    itemPrice = sku.getPrice();
+                    log.info("使用SKU价格：skuId={}, price={}", item.getSkuId(), itemPrice);
+                }
+            }
+            
+            BigDecimal itemTotal = itemPrice.multiply(new BigDecimal(item.getQuantity()));
             totalAmount = totalAmount.add(itemTotal);
         }
 
@@ -190,6 +204,15 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         for (OrderCreateDTO.OrderItemDTO item : items) {
             Product product = productService.getById(item.getProductId());
 
+            // 获取SKU价格，如果没有SKU则使用商品价格
+            BigDecimal itemPrice = product.getPrice();
+            if (item.getSkuId() != null) {
+                ProductSku sku = productSkuService.getById(item.getSkuId());
+                if (sku != null && sku.getPrice() != null) {
+                    itemPrice = sku.getPrice();
+                }
+            }
+
             OrderItem orderItem = new OrderItem();
             orderItem.setOrderId(order.getId());
             orderItem.setProductId(product.getId());
@@ -197,9 +220,9 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
             orderItem.setProductImage(product.getCoverImage());
             orderItem.setSpecInfo("");
             orderItem.setSkuId(item.getSkuId());  // 保存SKU ID
-            orderItem.setUnitPrice(product.getPrice());
+            orderItem.setUnitPrice(itemPrice);  // 使用SKU价格或商品价格
             orderItem.setQuantity(item.getQuantity());
-            orderItem.setTotalPrice(product.getPrice().multiply(new BigDecimal(item.getQuantity())));
+            orderItem.setTotalPrice(itemPrice.multiply(new BigDecimal(item.getQuantity())));
             orderItem.setIsReviewed(0);
             orderItemService.save(orderItem);
 
@@ -337,7 +360,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void payOrder(String orderNo, Long userId, Integer paymentMethod) {
+    public Orders payOrder(String orderNo, Long userId, Integer paymentMethod) {
         log.info("支付订单：orderNo={}, userId={}, paymentMethod={}", orderNo, userId, paymentMethod);
 
         // 1. 查询订单
@@ -366,6 +389,7 @@ public class OrdersServiceImpl extends ServiceImpl<OrdersMapper, Orders> impleme
         }
 
         log.info("订单支付成功：orderNo={}", orderNo);
+        return order;
     }
 
     @Override
