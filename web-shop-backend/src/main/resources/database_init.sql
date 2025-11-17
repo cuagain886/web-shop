@@ -1,7 +1,7 @@
 -- ======================================================
 -- WebShop 电商平台数据库初始化脚本
 -- 优化版本 - 适配前端功能
--- 日期: 2025-11-03
+-- 日期: 2025-11-17
 -- ======================================================
 
 -- 创建数据库（如果不存在）
@@ -94,6 +94,7 @@ CREATE TABLE `product` (
     `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态（0-下架，1-上架）',
     `is_hot` tinyint NOT NULL DEFAULT 0 COMMENT '是否热销（0-否，1-是）',
     `is_recommend` tinyint NOT NULL DEFAULT 0 COMMENT '是否推荐（0-否，1-是）',
+    `is_flash_sale` tinyint NOT NULL DEFAULT 0 COMMENT '是否限时秒杀（0-否，1-是）',
     `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除（0-未删除，1-已删除）',
     `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -106,16 +107,41 @@ CREATE TABLE `product` (
     KEY `idx_is_hot` (`is_hot`),
     KEY `idx_is_recommend` (`is_recommend`),
     KEY `idx_deleted` (`deleted`),
+    KEY `idx_is_flash_sale` (`is_flash_sale`),
     CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `product_category` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品表';
 
 -- ======================================================
--- 5. 购物车表
+-- 5. 商品SKU表
+-- ======================================================
+CREATE TABLE `product_sku` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT 'SKU ID',
+    `product_id` bigint NOT NULL COMMENT '商品ID',
+    `sku_code` varchar(50) NOT NULL COMMENT 'SKU编码',
+    `sku_name` varchar(100) NOT NULL COMMENT '规格名称',
+    `attributes` text COMMENT '规格属性JSON',
+    `price` decimal(10,2) NOT NULL COMMENT 'SKU价格',
+    `original_price` decimal(10,2) DEFAULT NULL COMMENT 'SKU原价',
+    `stock` int NOT NULL DEFAULT 0 COMMENT 'SKU库存',
+    `sales` int NOT NULL DEFAULT 0 COMMENT 'SKU销量',
+    `image` varchar(500) DEFAULT NULL COMMENT 'SKU图片',
+    `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态(0-禁用,1-启用)',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除(0-未删除,1-已删除)',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_sku_code` (`sku_code`),
+    KEY `idx_product_id` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='商品SKU表';
+
+-- ======================================================
+-- 6. 购物车表
 -- ======================================================
 CREATE TABLE `shopping_cart` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '购物车项ID',
     `user_id` bigint NOT NULL COMMENT '关联用户ID',
     `product_id` bigint NOT NULL COMMENT '关联商品ID',
+    `sku_id` bigint DEFAULT NULL COMMENT 'SKU ID',
     `spec_info` varchar(200) DEFAULT NULL COMMENT '规格信息（如："颜色:红色,尺寸:XL"）',
     `quantity` int NOT NULL DEFAULT 1 COMMENT '商品数量',
     `checked` tinyint NOT NULL DEFAULT 1 COMMENT '是否选中（0-否，1-是）',
@@ -125,12 +151,12 @@ CREATE TABLE `shopping_cart` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_product_id` (`product_id`),
     KEY `idx_checked` (`checked`),
-    CONSTRAINT `fk_cart_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_cart_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`)
+    CONSTRAINT `fk_cart_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
+    CONSTRAINT `fk_cart_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='购物车表';
 
 -- ======================================================
--- 6. 订单表（改名避免关键字冲突）
+-- 7. 订单表（改名避免关键字冲突）
 -- ======================================================
 CREATE TABLE `orders` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单ID',
@@ -166,12 +192,13 @@ CREATE TABLE `orders` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单表';
 
 -- ======================================================
--- 7. 订单项表
+-- 8. 订单项表
 -- ======================================================
 CREATE TABLE `order_item` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '订单项ID',
     `order_id` bigint NOT NULL COMMENT '关联订单ID',
     `product_id` bigint NOT NULL COMMENT '关联商品ID',
+    `sku_id` bigint DEFAULT NULL COMMENT 'SKU ID',
     `product_name` varchar(200) NOT NULL COMMENT '商品名称（冗余）',
     `product_image` varchar(255) DEFAULT NULL COMMENT '商品图片（冗余）',
     `spec_info` varchar(200) DEFAULT NULL COMMENT '规格信息（如："颜色:红色,尺寸:XL"）',
@@ -188,7 +215,7 @@ CREATE TABLE `order_item` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单项表';
 
 -- ======================================================
--- 8. 商品评价表（新增）
+-- 9. 商品评价表
 -- ======================================================
 CREATE TABLE `product_review` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '评价ID',
@@ -210,64 +237,12 @@ CREATE TABLE `product_review` (
     KEY `idx_rating` (`rating`),
     KEY `idx_deleted` (`deleted`),
     CONSTRAINT `fk_review_order_item` FOREIGN KEY (`order_item_id`) REFERENCES `order_item` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
-    CONSTRAINT `fk_review_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`)
+    CONSTRAINT `fk_review_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`),
+    CONSTRAINT `fk_review_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='商品评价表';
 
 -- ======================================================
--- 9. 用户收藏表（新增）
--- ======================================================
-CREATE TABLE `user_favorite` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
-    `user_id` bigint NOT NULL COMMENT '关联用户ID',
-    `product_id` bigint NOT NULL COMMENT '关联商品ID',
-    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_user_product` (`user_id`, `product_id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_product_id` (`product_id`),
-    KEY `idx_created_time` (`created_time`),
-    CONSTRAINT `fk_favorite_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_favorite_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户收藏表';
-
--- ======================================================
--- 10. 浏览历史表（新增）
--- ======================================================
-CREATE TABLE `browsing_history` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '历史记录ID',
-    `user_id` bigint NOT NULL COMMENT '关联用户ID',
-    `product_id` bigint NOT NULL COMMENT '关联商品ID',
-    `view_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '浏览时间',
-    PRIMARY KEY (`id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_product_id` (`product_id`),
-    KEY `idx_user_time` (`user_id`, `view_time`),
-    CONSTRAINT `fk_history_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_history_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='浏览历史表';
-
--- ======================================================
--- 11. 操作日志表（新增）
--- ======================================================
-CREATE TABLE `operation_log` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
-    `operator_id` bigint NOT NULL COMMENT '操作人ID',
-    `operator_name` varchar(50) NOT NULL COMMENT '操作人名称',
-    `operation_type` varchar(50) NOT NULL COMMENT '操作类型（如：商品管理、订单管理）',
-    `operation_content` varchar(500) NOT NULL COMMENT '操作内容',
-    `operation_object` varchar(100) DEFAULT NULL COMMENT '操作对象（如：商品ID、订单号）',
-    `ip_address` varchar(50) DEFAULT NULL COMMENT 'IP地址',
-    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
-    PRIMARY KEY (`id`),
-    KEY `idx_operator_id` (`operator_id`),
-    KEY `idx_operation_type` (`operation_type`),
-    KEY `idx_created_time` (`created_time`),
-    CONSTRAINT `fk_log_operator` FOREIGN KEY (`operator_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
-
--- ======================================================
--- 12. 退款表
+-- 10. 退款表
 -- ======================================================
 CREATE TABLE `refund` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '退款ID',
@@ -288,25 +263,94 @@ CREATE TABLE `refund` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='退款表';
 
 -- ======================================================
--- 13. 商品SKU表
+-- 11. 用户收藏表
 -- ======================================================
-CREATE TABLE IF NOT EXISTS `product_sku` (
-                                             `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'SKU ID',
-                                             `product_id` BIGINT NOT NULL COMMENT '商品ID',
-                                             `sku_code` VARCHAR(50) NOT NULL COMMENT 'SKU编码',
-    `sku_name` VARCHAR(100) NOT NULL COMMENT '规格名称',
-    `attributes` TEXT COMMENT '规格属性JSON',
-    `price` DECIMAL(10, 2) NOT NULL COMMENT 'SKU价格',
-    `original_price` DECIMAL(10, 2) COMMENT 'SKU原价',
-    `stock` INT NOT NULL DEFAULT 0 COMMENT 'SKU库存',
-    `sales` INT NOT NULL DEFAULT 0 COMMENT 'SKU销量',
-    `image` VARCHAR(500) COMMENT 'SKU图片',
-    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态(0-禁用,1-启用)',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除(0-未删除,1-已删除)',
-    `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+CREATE TABLE `user_favorite` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+    `user_id` bigint NOT NULL COMMENT '关联用户ID',
+    `product_id` bigint NOT NULL COMMENT '关联商品ID',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_sku_code` (`sku_code`),
-    KEY `idx_product_id` (`product_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='商品SKU表';
+    UNIQUE KEY `uk_user_product` (`user_id`, `product_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_product_id` (`product_id`),
+    KEY `idx_created_time` (`created_time`),
+    CONSTRAINT `fk_favorite_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_favorite_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户收藏表';
 
+-- ======================================================
+-- 12. 浏览历史表
+-- ======================================================
+CREATE TABLE `browsing_history` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '历史记录ID',
+    `user_id` bigint NOT NULL COMMENT '关联用户ID',
+    `product_id` bigint NOT NULL COMMENT '关联商品ID',
+    `view_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '浏览时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_product_id` (`product_id`),
+    KEY `idx_user_time` (`user_id`, `view_time`),
+    CONSTRAINT `fk_history_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_history_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='浏览历史表';
+
+-- ======================================================
+-- 13. 操作日志表
+-- ======================================================
+CREATE TABLE `operation_log` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `operator_id` bigint NOT NULL COMMENT '操作人ID',
+    `operator_name` varchar(50) NOT NULL COMMENT '操作人名称',
+    `operation_type` varchar(50) NOT NULL COMMENT '操作类型（如：商品管理、订单管理）',
+    `operation_content` varchar(500) NOT NULL COMMENT '操作内容',
+    `operation_object` varchar(100) DEFAULT NULL COMMENT '操作对象（如：商品ID、订单号）',
+    `ip_address` varchar(50) DEFAULT NULL COMMENT 'IP地址',
+    `created_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_operator_id` (`operator_id`),
+    KEY `idx_operation_type` (`operation_type`),
+    KEY `idx_created_time` (`created_time`),
+    CONSTRAINT `fk_log_operator` FOREIGN KEY (`operator_id`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志表';
+
+-- ======================================================
+-- 14. 系统设置表
+-- ======================================================
+CREATE TABLE `system_settings` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '设置ID',
+    `site_name` varchar(100) DEFAULT '购物平台' COMMENT '网站名称',
+    `site_description` varchar(500) DEFAULT NULL COMMENT '网站描述',
+    `contact_phone` varchar(20) DEFAULT NULL COMMENT '联系电话',
+    `contact_email` varchar(100) DEFAULT NULL COMMENT '联系邮箱',
+    `order_cancel_time` int DEFAULT 24 COMMENT '自动取消订单时间（小时）',
+    `order_confirm_time` int DEFAULT 7 COMMENT '自动确认收货时间（天）',
+    `stock_warning` int DEFAULT 10 COMMENT '库存预警数量',
+    `default_shipping` decimal(10,2) DEFAULT 10.00 COMMENT '默认运费',
+    `allow_register` tinyint(1) DEFAULT 1 COMMENT '是否允许用户注册',
+    `allow_comment` tinyint(1) DEFAULT 1 COMMENT '是否允许商品评价',
+    `maintenance_mode` tinyint(1) DEFAULT 0 COMMENT '是否开启维护模式',
+    `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_created_time` (`created_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统设置表';
+
+-- ======================================================
+-- 15. 公告表
+-- ======================================================
+CREATE TABLE `announcement` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '公告ID',
+    `title` varchar(255) NOT NULL COMMENT '公告标题',
+    `content` longtext NOT NULL COMMENT '公告内容',
+    `type` int DEFAULT 1 COMMENT '公告类型（1-普通公告，2-重要公告，3-活动公告）',
+    `is_top` int DEFAULT 0 COMMENT '是否置顶（0-否，1-是）',
+    `status` int DEFAULT 0 COMMENT '状态（0-草稿，1-发布）',
+    `deleted` int DEFAULT 0 COMMENT '逻辑删除（0-未删除，1-已删除）',
+    `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_is_top` (`is_top`),
+    KEY `idx_created_time` (`created_time`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告表';
