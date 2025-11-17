@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.ProductCategoryMapper">
+
+    <!-- 查询所有一级分类 -->
+    <select id="selectRootCategories" resultType="org.javaweb.webshopbackend.pojo.entity.ProductCategory">
+        SELECT 
+            id, 
+            name, 
+            parent_id AS parentId,
+            icon,
+            sort,
+            deleted,
+            created_time AS createdTime,
+            updated_time AS updatedTime
+        FROM product_category
+        WHERE deleted = 0 
+          AND parent_id = 0
+        ORDER BY sort ASC, id ASC
+    </select>
+
+    <!-- 查询指定父分类下的子分类 -->
+    <select id="selectByParentId" resultType="org.javaweb.webshopbackend.pojo.entity.ProductCategory">
+        SELECT 
+            id, 
+            name, 
+            parent_id AS parentId,
+            icon,
+            sort,
+            deleted,
+            created_time AS createdTime,
+            updated_time AS updatedTime
+        FROM product_category
+        WHERE deleted = 0 
+          AND parent_id = #{parentId}
+        ORDER BY sort ASC, id ASC
+    </select>
+
+    <!-- 统计分类下的商品数量 -->
+    <select id="countProductsByCategoryId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM product
+        WHERE deleted = 0 
+          AND category_id = #{categoryId}
+    </select>
+
+    <!-- 统计分类下的子分类数量 -->
+    <select id="countChildrenByCategoryId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM product_category
+        WHERE deleted = 0 
+          AND parent_id = #{categoryId}
+    </select>
+
+</mapper>
+

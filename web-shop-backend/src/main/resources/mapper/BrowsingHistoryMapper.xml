@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.BrowsingHistoryMapper">
+
+    <!-- 结果映射 - 包含商品信息 -->
+    <resultMap id="HistoryWithProductMap" type="org.javaweb.webshopbackend.pojo.entity.BrowsingHistory">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="viewTime" column="view_time"/>
+        <!-- 关联商品信息 -->
+        <association property="product" javaType="org.javaweb.webshopbackend.pojo.entity.Product">
+            <id property="id" column="product_id"/>
+            <result property="name" column="product_name"/>
+            <result property="coverImage" column="product_image"/>
+            <result property="price" column="product_price"/>
+            <result property="stock" column="product_stock"/>
+            <result property="status" column="product_status"/>
+        </association>
+    </resultMap>
+
+    <!-- 查询用户浏览历史（带商品信息） -->
+    <select id="selectByUserIdWithProduct" resultMap="HistoryWithProductMap">
+        SELECT 
+            bh.id,
+            bh.user_id,
+            bh.product_id,
+            bh.view_time,
+            p.name AS product_name,
+            p.cover_image AS product_image,
+            p.price AS product_price,
+            p.stock AS product_stock,
+            p.status AS product_status
+        FROM browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
+        LEFT JOIN product p ON bh.product_id = p.id AND p.deleted = 0
+        WHERE bh.user_id = #{userId}
+        ORDER BY bh.view_time DESC
+        <if test="limit != null">
+        LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询用户是否已浏览某商品 -->
+    <select id="selectByUserIdAndProductId" resultType="org.javaweb.webshopbackend.pojo.entity.BrowsingHistory">
+        SELECT 
+            id,
+            user_id AS userId,
+            product_id AS productId,
+            view_time AS viewTime
+        FROM browsing_history
+        WHERE user_id = #{userId} 
+          AND product_id = #{productId}
+    </select>
+
+    <!-- 删除用户指定商品的浏览记录（物理删除） -->
+    <delete id="deleteByUserIdAndProductId">
+        DELETE bh FROM browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
+        WHERE bh.user_id = #{userId} 
+          AND bh.product_id = #{productId}
+    </delete>
+
+    <!-- 清空用户浏览历史（物理删除） -->
+    <delete id="deleteByUserId">
+        DELETE bh FROM browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
+        WHERE bh.user_id = #{userId}
+    </delete>
+
+    <!-- 删除用户超过指定天数的浏览记录（物理删除） -->
+    <delete id="deleteOldRecords">
+        DELETE bh FROM browsing_history bh
+        INNER JOIN user u ON bh.user_id = u.id AND u.deleted = 0
+        WHERE bh.user_id = #{userId}
+          AND bh.view_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </delete>
+
+    <!-- 查询热门商品（基于浏览次数） -->
+    <select id="selectHotProducts" resultType="java.lang.Long">
+        SELECT product_id
+        FROM browsing_history
+        GROUP BY product_id
+        ORDER BY COUNT(*) DESC
+        <if test="limit != null">
+        LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>
+

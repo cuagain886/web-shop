@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.ProductReviewMapper">
+
+    <!-- 结果映射 - 包含用户信息 -->
+    <resultMap id="ReviewWithUserMap" type="org.javaweb.webshopbackend.pojo.entity.ProductReview">
+        <id property="id" column="id"/>
+        <result property="productId" column="product_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="orderItemId" column="order_item_id"/>
+        <result property="rating" column="rating"/>
+        <result property="content" column="content"/>
+        <result property="images" column="images"/>
+        <result property="reply" column="reply"/>
+        <result property="replyTime" column="reply_time"/>
+        <result property="createdTime" column="created_time"/>
+        <!-- 关联用户信息 -->
+        <association property="user" javaType="org.javaweb.webshopbackend.pojo.entity.User">
+            <id property="id" column="user_id"/>
+            <result property="username" column="username"/>
+            <result property="nickname" column="nickname"/>
+            <result property="avatar" column="avatar"/>
+        </association>
+    </resultMap>
+
+    <!-- 分页查询商品评价（带用户信息） -->
+    <select id="selectPageWithUser" resultMap="ReviewWithUserMap">
+        SELECT 
+            pr.id,
+            pr.product_id,
+            pr.user_id,
+            pr.order_item_id,
+            pr.rating,
+            pr.content,
+            pr.images,
+            pr.reply,
+            pr.reply_time,
+            pr.created_time,
+            u.username,
+            u.nickname,
+            u.avatar
+        FROM product_review pr
+        LEFT JOIN user u ON pr.user_id = u.id AND u.deleted = 0
+        WHERE pr.deleted = 0
+          AND pr.product_id = #{productId}
+        <if test="rating != null">
+          AND pr.rating = #{rating}
+        </if>
+        ORDER BY pr.created_time DESC
+    </select>
+
+    <!-- 查询用户的评价列表 -->
+    <select id="selectByUserId" resultType="org.javaweb.webshopbackend.pojo.entity.ProductReview">
+        SELECT 
+            pr.id,
+            pr.product_id AS productId,
+            pr.user_id AS userId,
+            pr.order_item_id AS orderItemId,
+            pr.rating,
+            pr.content,
+            pr.images,
+            pr.reply,
+            pr.reply_time AS replyTime,
+            pr.created_time AS createdTime
+        FROM product_review pr
+        INNER JOIN user u ON pr.user_id = u.id AND u.deleted = 0
+        WHERE pr.deleted = 0 
+          AND pr.user_id = #{userId}
+        ORDER BY pr.created_time DESC
+    </select>
+
+    <!-- 统计商品的平均评分 -->
+    <select id="selectAvgRatingByProductId" resultType="java.lang.Double">
+        SELECT COALESCE(AVG(rating), 0.0)
+        FROM product_review
+        WHERE deleted = 0 
+          AND product_id = #{productId}
+    </select>
+
+    <!-- 统计商品的评价数量 -->
+    <select id="countByProductId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM product_review
+        WHERE deleted = 0 
+          AND product_id = #{productId}
+    </select>
+
+    <!-- 统计商品各星级评价数量 -->
+    <select id="countByProductIdGroupByRating" resultType="org.javaweb.webshopbackend.pojo.entity.ProductReview">
+        SELECT 
+            rating,
+            COUNT(*) AS id
+        FROM product_review
+        WHERE deleted = 0 
+          AND product_id = #{productId}
+        GROUP BY rating
+        ORDER BY rating DESC
+    </select>
+
+</mapper>
+

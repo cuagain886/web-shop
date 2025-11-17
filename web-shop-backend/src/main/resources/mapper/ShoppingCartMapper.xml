@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.ShoppingCartMapper">
+
+    <!-- 购物车ResultMap（包含商品信息） -->
+    <resultMap id="CartWithProductMap" type="org.javaweb.webshopbackend.pojo.entity.ShoppingCart">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="product_id" property="productId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="spec_info" property="specInfo"/>
+        <result column="checked" property="checked"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="updated_time" property="updatedTime"/>
+        <!-- 关联商品信息 -->
+        <association property="product" javaType="org.javaweb.webshopbackend.pojo.entity.Product">
+            <id column="p_id" property="id"/>
+            <result column="p_name" property="name"/>
+            <result column="p_price" property="price"/>
+            <result column="p_original_price" property="originalPrice"/>
+            <result column="p_stock" property="stock"/>
+            <result column="p_cover_image" property="coverImage"/>
+            <result column="p_status" property="status"/>
+        </association>
+    </resultMap>
+
+    <!-- 查询用户购物车（带商品信息） -->
+    <select id="selectCartWithProduct" resultMap="CartWithProductMap">
+        SELECT
+            sc.id,
+            sc.user_id,
+            sc.product_id,
+            sc.quantity,
+            sc.spec_info,
+            sc.checked,
+            sc.created_time,
+            sc.updated_time,
+            p.id AS p_id,
+            p.name AS p_name,
+            p.price AS p_price,
+            p.original_price AS p_original_price,
+            p.stock AS p_stock,
+            p.cover_image AS p_cover_image,
+            p.status AS p_status
+        FROM `shopping_cart` sc
+        INNER JOIN `user` u ON sc.user_id = u.id AND u.deleted = 0
+        LEFT JOIN `product` p ON sc.product_id = p.id AND p.deleted = 0
+        WHERE sc.user_id = #{userId}
+        ORDER BY sc.created_time DESC
+    </select>
+
+    <!-- 查询用户已选中的购物车项 -->
+    <select id="selectCheckedByUserId" resultMap="CartWithProductMap">
+        SELECT
+            sc.id,
+            sc.user_id,
+            sc.product_id,
+            sc.quantity,
+            sc.spec_info,
+            sc.checked,
+            sc.created_time,
+            sc.updated_time,
+            p.id AS p_id,
+            p.name AS p_name,
+            p.price AS p_price,
+            p.original_price AS p_original_price,
+            p.stock AS p_stock,
+            p.cover_image AS p_cover_image,
+            p.status AS p_status
+        FROM `shopping_cart` sc
+        INNER JOIN `user` u ON sc.user_id = u.id AND u.deleted = 0
+        LEFT JOIN `product` p ON sc.product_id = p.id AND p.deleted = 0
+        WHERE sc.user_id = #{userId}
+        AND sc.checked = 1
+        ORDER BY sc.created_time DESC
+    </select>
+
+    <!-- 更新购物车项选中状态 -->
+    <update id="updateCheckedByUserId">
+        UPDATE `shopping_cart`
+        SET checked = #{checked}
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 清空用户购物车 -->
+    <delete id="deleteByUserId">
+        DELETE FROM `shopping_cart`
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 删除用户已选中的购物车项 -->
+    <delete id="deleteCheckedByUserId">
+        DELETE FROM `shopping_cart`
+        WHERE user_id = #{userId}
+        AND checked = 1
+    </delete>
+
+</mapper>
+

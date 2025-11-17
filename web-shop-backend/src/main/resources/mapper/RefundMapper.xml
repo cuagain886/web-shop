@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.RefundMapper">
+
+    <!-- 结果映射 - 包含订单信息 -->
+    <resultMap id="RefundWithOrderMap" type="org.javaweb.webshopbackend.pojo.entity.Refund">
+        <id property="id" column="id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="refundNo" column="refund_no"/>
+        <result property="refundAmount" column="refund_amount"/>
+        <result property="reason" column="reason"/>
+        <result property="status" column="status"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="handleTime" column="handle_time"/>
+        <!-- 关联订单信息 -->
+        <association property="order" javaType="org.javaweb.webshopbackend.pojo.entity.Orders">
+            <id property="id" column="order_id"/>
+            <result property="orderNo" column="order_no"/>
+            <result property="userId" column="user_id"/>
+            <result property="totalAmount" column="total_amount"/>
+            <result property="status" column="order_status"/>
+        </association>
+    </resultMap>
+
+    <!-- 分页查询退款申请（带订单信息） -->
+    <select id="selectPageWithOrder" resultMap="RefundWithOrderMap">
+        SELECT 
+            r.id,
+            r.order_id,
+            r.refund_no,
+            r.refund_amount,
+            r.reason,
+            r.status,
+            r.created_time,
+            r.handle_time,
+            o.order_no,
+            o.user_id,
+            o.total_amount,
+            o.status AS order_status
+        FROM refund r
+        LEFT JOIN orders o ON r.order_id = o.id AND o.deleted = 0
+        WHERE r.deleted = 0
+        <if test="status != null">
+          AND r.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+          AND (r.refund_no LIKE CONCAT('%', #{keyword}, '%') 
+               OR o.order_no LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY r.created_time DESC
+    </select>
+
+    <!-- 根据订单ID查询退款记录 -->
+    <select id="selectByOrderId" resultType="org.javaweb.webshopbackend.pojo.entity.Refund">
+        SELECT 
+            id,
+            order_id AS orderId,
+            refund_no AS refundNo,
+            refund_amount AS refundAmount,
+            reason,
+            status,
+            created_time AS createdTime,
+            handle_time AS handleTime
+        FROM refund
+        WHERE deleted = 0 
+          AND order_id = #{orderId}
+    </select>
+
+    <!-- 根据退款单号查询退款记录 -->
+    <select id="selectByRefundNo" resultType="org.javaweb.webshopbackend.pojo.entity.Refund">
+        SELECT 
+            id,
+            order_id AS orderId,
+            refund_no AS refundNo,
+            refund_amount AS refundAmount,
+            reason,
+            status,
+            created_time AS createdTime,
+            handle_time AS handleTime
+        FROM refund
+        WHERE deleted = 0 
+          AND refund_no = #{refundNo}
+    </select>
+
+    <!-- 统计各状态退款数量 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM refund
+        WHERE deleted = 0 
+          AND status = #{status}
+    </select>
+
+    <!-- 分页查询用户的退款申请（带订单信息） -->
+    <select id="selectPageByUserId" resultMap="RefundWithOrderMap">
+        SELECT 
+            r.id,
+            r.order_id,
+            r.refund_no,
+            r.refund_amount,
+            r.reason,
+            r.status,
+            r.created_time,
+            r.handle_time,
+            o.order_no,
+            o.user_id,
+            o.total_amount,
+            o.status AS order_status
+        FROM refund r
+        LEFT JOIN orders o ON r.order_id = o.id AND o.deleted = 0
+        INNER JOIN user u ON o.user_id = u.id AND u.deleted = 0
+        WHERE r.deleted = 0
+          AND o.user_id = #{userId}
+        ORDER BY r.created_time DESC
+    </select>
+
+    <!-- 查询退款详情（带完整订单和商品信息） -->
+    <select id="selectDetailById" resultMap="RefundWithOrderMap">
+        SELECT 
+            r.id,
+            r.order_id,
+            r.refund_no,
+            r.refund_amount,
+            r.reason,
+            r.status,
+            r.created_time,
+            r.handle_time,
+            o.order_no,
+            o.user_id,
+            o.total_amount,
+            o.status AS order_status
+        FROM refund r
+        LEFT JOIN orders o ON r.order_id = o.id AND o.deleted = 0
+        WHERE r.deleted = 0
+          AND r.id = #{refundId}
+    </select>
+
+</mapper>
+

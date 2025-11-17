@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.UserAddressMapper">
+
+    <!-- 查询用户的所有地址 -->
+    <select id="selectByUserId" resultType="org.javaweb.webshopbackend.pojo.entity.UserAddress">
+        SELECT
+            ua.id,
+            ua.user_id,
+            ua.receiver_name,
+            ua.receiver_phone,
+            ua.province,
+            ua.city,
+            ua.district,
+            ua.detail_address,
+            ua.is_default,
+            ua.created_time,
+            ua.updated_time
+        FROM `user_address` ua
+        INNER JOIN `user` u ON ua.user_id = u.id AND u.deleted = 0
+        WHERE ua.deleted = 0
+          AND ua.user_id = #{userId}
+        ORDER BY ua.is_default DESC, ua.created_time DESC
+    </select>
+
+    <!-- 查询用户的默认地址 -->
+    <select id="selectDefaultByUserId" resultType="org.javaweb.webshopbackend.pojo.entity.UserAddress">
+        SELECT
+            ua.id,
+            ua.user_id,
+            ua.receiver_name,
+            ua.receiver_phone,
+            ua.province,
+            ua.city,
+            ua.district,
+            ua.detail_address,
+            ua.is_default,
+            ua.created_time,
+            ua.updated_time
+        FROM `user_address` ua
+        INNER JOIN `user` u ON ua.user_id = u.id AND u.deleted = 0
+        WHERE ua.deleted = 0
+          AND ua.user_id = #{userId}
+          AND ua.is_default = 1
+        LIMIT 1
+    </select>
+
+    <!-- 取消用户的所有默认地址 -->
+    <update id="cancelDefaultByUserId">
+        UPDATE `user_address` ua
+        INNER JOIN `user` u ON ua.user_id = u.id AND u.deleted = 0
+        SET ua.is_default = 0
+        WHERE ua.deleted = 0
+          AND ua.user_id = #{userId}
+    </update>
+
+</mapper>
+

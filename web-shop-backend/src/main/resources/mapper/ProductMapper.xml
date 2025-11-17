@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaweb.webshopbackend.mapper.ProductMapper">
+
+    <!-- 商品ResultMap（包含分类名称） -->
+    <resultMap id="ProductWithCategoryMap" type="org.javaweb.webshopbackend.pojo.entity.Product">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="price" property="price"/>
+        <result column="original_price" property="originalPrice"/>
+        <result column="stock" property="stock"/>
+        <result column="sales" property="sales"/>
+        <result column="cover_image" property="coverImage"/>
+        <result column="images" property="images"/>
+        <result column="description" property="description"/>
+        <result column="specs" property="specs"/>
+        <result column="status" property="status"/>
+        <result column="is_hot" property="isHot"/>
+        <result column="is_recommend" property="isRecommend"/>
+        <result column="deleted" property="deleted"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="updated_time" property="updatedTime"/>
+    </resultMap>
+
+    <!-- 分页查询商品（带分类名称） -->
+    <select id="selectPageWithCategory" resultMap="ProductWithCategoryMap">
+        SELECT
+            p.id,
+            p.name,
+            p.category_id,
+            p.price,
+            p.original_price,
+            p.stock,
+            p.sales,
+            p.cover_image,
+            p.images,
+            p.description,
+            p.specs,
+            p.status,
+            p.is_hot,
+            p.is_recommend,
+            p.deleted,
+            p.created_time,
+            p.updated_time
+        FROM `product` p
+        LEFT JOIN `product_category` pc ON p.category_id = pc.id AND pc.deleted = 0
+        WHERE p.deleted = 0
+        <if test="categoryId != null">
+            AND p.category_id = #{categoryId}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (p.name LIKE CONCAT('%', #{keyword}, '%')
+                 OR p.description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="status != null">
+            AND p.status = #{status}
+        </if>
+        ORDER BY p.created_time DESC
+    </select>
+
+    <!-- 查询热销商品 -->
+    <select id="selectHotProducts" resultType="org.javaweb.webshopbackend.pojo.entity.Product">
+        SELECT
+            id,
+            name,
+            category_id,
+            price,
+            original_price,
+            stock,
+            sales,
+            cover_image,
+            images,
+            description,
+            specs,
+            status,
+            is_hot,
+            is_recommend,
+            deleted,
+            created_time,
+            updated_time
+        FROM `product`
+        WHERE deleted = 0
+        AND status = 1
+        AND is_hot = 1
+        ORDER BY sales DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询推荐商品 -->
+    <select id="selectRecommendProducts" resultType="org.javaweb.webshopbackend.pojo.entity.Product">
+        SELECT
+            id,
+            name,
+            category_id,
+            price,
+            original_price,
+            stock,
+            sales,
+            cover_image,
+            images,
+            description,
+            specs,
+            status,
+            is_hot,
+            is_recommend,
+            deleted,
+            created_time,
+            updated_time
+        FROM `product`
+        WHERE deleted = 0
+        AND status = 1
+        AND is_recommend = 1
+        ORDER BY sales DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询秒杀商品 -->
+    <select id="selectFlashSaleProducts" resultType="org.javaweb.webshopbackend.pojo.entity.Product">
+        SELECT
+            id,
+            name,
+            category_id,
+            price,
+            original_price,
+            stock,
+            sales,
+            cover_image,
+            images,
+            description,
+            specs,
+            status,
+            is_hot,
+            is_recommend,
+            is_flash_sale AS isFlashSale,
+            deleted,
+            created_time,
+            updated_time
+        FROM `product`
+        WHERE deleted = 0
+        AND status = 1
+        AND is_flash_sale = 1
+        ORDER BY sales DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 更新商品销量 -->
+    <update id="updateSales">
+        UPDATE `product`
+        SET sales = sales + #{quantity}
+        WHERE id = #{productId}
+    </update>
+
+    <!-- 更新商品库存（增量更新） -->
+    <update id="updateStock">
+        UPDATE `product`
+        SET stock = stock + #{quantity}
+        WHERE id = #{productId}
+    </update>
+
+    <!-- 设置商品库存（绝对值） -->
+    <update id="setStock">
+        UPDATE `product`
+        SET stock = #{stock}
+        WHERE id = #{productId}
+    </update>
+
+    <!-- 批量更新商品状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE `product`
+        SET status = #{status}
+        WHERE id IN
+        <foreach collection="productIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>
+
