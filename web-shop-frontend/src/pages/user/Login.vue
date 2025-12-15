@@ -84,7 +84,7 @@ import { ElMessage } from 'element-plus'
 import { Shop } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 
-console.log('🔐 登录页面加载')
+console.log('登录页面加载')
 
 const router = useRouter()
 const route = useRoute()
@@ -126,7 +126,7 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
 
     loading.value = true
-    console.log('🔐 开始登录...', loginForm.username)
+    console.log('开始登录...', loginForm.username)
 
     // 调用登录接口
     await userStore.login({
@@ -135,7 +135,7 @@ const handleLogin = async () => {
     })
 
     ElMessage.success('登录成功！')
-    console.log('✅ 登录成功')
+    console.log('登录成功')
 
     // 获取重定向地址
     const redirect = route.query.redirect || '/'
@@ -146,7 +146,7 @@ const handleLogin = async () => {
     }, 500)
 
   } catch (error) {
-    console.error('❌ 登录失败:', error)
+    console.error('登录失败:', error)
     ElMessage.error(error.message || '登录失败，请检查用户名和密码')
   } finally {
     loading.value = false
@@ -171,7 +171,7 @@ const goToMerchantLogin = () => {
 <style scoped>
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: center;

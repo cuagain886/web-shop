@@ -87,5 +87,17 @@ public class ProductReview implements Serializable {
      */
     @TableField(exist = false)
     private User user;
+
+    /**
+     * 商品名称（非数据库字段，用于关联查询）
+     */
+    @TableField(exist = false)
+    private String productName;
+
+    /**
+     * 商品图片（非数据库字段，用于关联查询）
+     */
+    @TableField(exist = false)
+    private String productImage;
 }
 

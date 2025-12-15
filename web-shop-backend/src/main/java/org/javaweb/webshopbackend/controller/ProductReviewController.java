@@ -31,6 +31,9 @@ public class ProductReviewController {
     @Autowired
     private ProductReviewService reviewService;
 
+    @Autowired
+    private org.javaweb.webshopbackend.service.OrderItemService orderItemService;
+
     /**
      * 分页查询商品评价
      */
@@ -66,6 +69,37 @@ public class ProductReviewController {
         List<ProductReview> reviews = reviewService.getUserReviews(userId);
 
         return Result.success(reviews);
+    }
+
+    /**
+     * 检查用户是否购买过商品
+     */
+    @GetMapping("/check-purchased/{productId}")
+    @Operation(summary = "检查用户是否购买过商品", description = "检查用户是否有权评价该商品")
+    public Result<Map<String, Object>> checkPurchased(
+            @Parameter(description = "商品ID", required = true, example = "1")
+            @PathVariable Long productId,
+            @Parameter(description = "用户ID", required = true, example = "1")
+            @RequestParam Long userId) {
+        log.info("检查用户购买状态：userId={}, productId={}", userId, productId);
+
+        List<org.javaweb.webshopbackend.pojo.entity.OrderItem> items = orderItemService.getUnreviewedItems(userId);
+        boolean hasPurchased = items.stream().anyMatch(item -> item.getProductId().equals(productId));
+        
+        Long orderItemId = null;
+        if (hasPurchased) {
+            orderItemId = items.stream()
+                .filter(item -> item.getProductId().equals(productId))
+                .findFirst()
+                .map(org.javaweb.webshopbackend.pojo.entity.OrderItem::getId)
+                .orElse(null);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("hasPurchased", hasPurchased);
+        result.put("orderItemId", orderItemId);
+
+        return Result.success(result);
     }
 
     /**
@@ -113,6 +147,36 @@ public class ProductReviewController {
         reviewService.deleteReview(reviewId, userId);
 
         return Result.success("评价删除成功");
+    }
+
+    /**
+     * 获取用户待评价的订单项
+     */
+    @GetMapping("/pending/{userId}")
+    @Operation(summary = "获取待评价订单项", description = "获取用户待评价的订单项列表")
+    public Result<List<org.javaweb.webshopbackend.pojo.entity.OrderItem>> getPendingReviews(
+            @Parameter(description = "用户ID", required = true, example = "1")
+            @PathVariable Long userId) {
+        log.info("获取待评价订单项：userId={}", userId);
+
+        List<org.javaweb.webshopbackend.pojo.entity.OrderItem> items = orderItemService.getUnreviewedItems(userId);
+
+        return Result.success(items);
+    }
+
+    /**
+     * 获取用户已评价的订单项（带评价信息）
+     */
+    @GetMapping("/reviewed/{userId}")
+    @Operation(summary = "获取已评价订单项", description = "获取用户已评价的订单项列表（带评价信息）")
+    public Result<List<ProductReview>> getReviewedItems(
+            @Parameter(description = "用户ID", required = true, example = "1")
+            @PathVariable Long userId) {
+        log.info("获取已评价订单项：userId={}", userId);
+
+        List<ProductReview> reviews = reviewService.getUserReviews(userId);
+
+        return Result.success(reviews);
     }
 
     /**

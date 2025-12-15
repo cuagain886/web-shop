@@ -21,7 +21,7 @@
 
         <!-- 中间轮播图 -->
         <div class="jd-banner">
-          <el-carousel height="480px" indicator-position="outside">
+          <el-carousel height="520px" indicator-position="outside">
             <el-carousel-item v-for="item in banners" :key="item.id">
               <div class="banner-item" :style="{ background: item.color }">
                 <div class="banner-text">
@@ -36,13 +36,14 @@
         <!-- 右侧信息栏 -->
          <aside class="jd-sidebar">
            <div class="sidebar-card">
-             <div class="news-title">📢 公告</div>
+             <div class="news-title"> 公告</div>
              <div v-if="announcements.length > 0" class="announcements-list">
                <div
                  v-for="item in announcements.slice(0, 5)"
                  :key="item.id"
                  class="news-item"
                  :title="item.title"
+                 @click="goToAnnouncementDetail(item.id)"
                >
                  <span v-if="item.isTop === 1" class="top-badge">置顶</span>
                  {{ item.title }}
@@ -58,7 +59,7 @@
     <div class="jd-seckill">
       <div class="jd-container">
         <div class="section-header">
-          <h3>⚡ 限时秒杀</h3>
+          <h3> 限时秒杀</h3>
           <span class="more">查看更多 ›</span>
         </div>
         <div class="seckill-list">
@@ -69,9 +70,10 @@
             @click="goToProductDetail(item.id)"
           >
             <div class="item-img" :style="{ background: item.color }">
-              <el-image v-if="item.image" :src="item.image" fit="cover" style="width: 100%; height: 100%;" />
+              <el-image v-if="item.image" :src="item.image" fit="cover" style="width: 100%; height: 100%; object-fit: cover;" />
               <div v-else class="placeholder-text">{{ item.name }}</div>
             </div>
+            <div class="item-name" :title="item.name">{{ item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name }}</div>
             <div class="item-price">
               <span class="price">¥{{ item.price }}</span>
               <span class="origin-price">¥{{ item.originPrice }}</span>
@@ -86,26 +88,23 @@
     <div class="jd-recommend">
       <div class="jd-container">
         <div class="section-header">
-          <h3>🔥 为你推荐</h3>
+          <h3> 为你推荐</h3>
         </div>
         <div class="product-grid">
-          <div 
-            v-for="item in recommendProducts" 
-            :key="item.id" 
+          <div
+            v-for="item in recommendProducts"
+            :key="item.id"
             class="product-item"
             @click="goToProductDetail(item.id)"
           >
             <div class="product-img" :style="{ background: item.color }">
-              <el-image v-if="item.image" :src="item.image" fit="cover" style="width: 100%; height: 100%;" />
+              <el-image v-if="item.image" :src="item.image" fit="cover" style="width: 100%; height: 100%; object-fit: cover;" />
               <div v-else class="placeholder-text">{{ item.name }}</div>
             </div>
-            <div class="product-info">
-              <div class="product-name">{{ item.name }}</div>
-              <div class="product-desc">{{ item.desc }}</div>
-              <div class="product-price">
-                <span class="price">¥{{ item.price }}</span>
-                <span class="sales">{{ item.sales }}人付款</span>
-              </div>
+            <div class="product-name" :title="item.name">{{ item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name }}</div>
+            <div class="product-price">
+              <span class="price">¥{{ item.price }}</span>
+              <span class="sales">{{ item.sales }}人付款</span>
             </div>
           </div>
         </div>
@@ -120,47 +119,58 @@ import { useRouter } from 'vue-router'
 import { getFlashSaleProducts, getRecommendProducts } from '@/api/product'
 import { getPublishedAnnouncements } from '@/api/announcement'
 
-console.log('🎉 Home页面开始加载')
+console.log('Home页面开始加载')
 
 const router = useRouter()
 
 // 跳转到商品详情页
 const goToProductDetail = (productId) => {
-  console.log('🔍 点击商品，准备跳转到商品详情:', productId)
+  console.log('点击商品，准备跳转到商品详情:', productId)
   try {
     router.push(`/product/${productId}`)
-    console.log('✅ 商品详情跳转成功')
+    console.log('商品详情跳转成功')
   } catch (error) {
-    console.error('❌ 商品详情跳转失败:', error)
+    console.error('商品详情跳转失败:', error)
   }
 }
 
 // 跳转到分类商品列表
 const goToCategory = (categoryId) => {
-  console.log('📂 点击分类，准备跳转到分类列表:', categoryId)
+  console.log('点击分类，准备跳转到分类列表:', categoryId)
   try {
     router.push({
       path: '/products',
       query: { categoryId }
     })
-    console.log('✅ 分类列表跳转成功')
+    console.log('分类列表跳转成功')
   } catch (error) {
-    console.error('❌ 分类列表跳转失败:', error)
+    console.error('分类列表跳转失败:', error)
+  }
+}
+
+// 跳转到公告详情页
+const goToAnnouncementDetail = (announcementId) => {
+  console.log('点击公告，准备跳转到公告详情:', announcementId)
+  try {
+    router.push(`/announcement/${announcementId}`)
+    console.log('公告详情跳转成功')
+  } catch (error) {
+    console.error('公告详情跳转失败:', error)
   }
 }
 
 // 分类数据
 const categories = ref([
-  { id: 1, name: '家用电器', icon: '📺' },
-  { id: 2, name: '手机数码', icon: '📱' },
-  { id: 3, name: '电脑办公', icon: '💻' },
-  { id: 4, name: '家居家具', icon: '🛋️' },
-  { id: 5, name: '服装鞋靴', icon: '👕' },
-  { id: 6, name: '美妆个护', icon: '💄' },
-  { id: 7, name: '运动户外', icon: '⚽' },
-  { id: 8, name: '食品生鲜', icon: '🍎' },
-  { id: 9, name: '母婴玩具', icon: '🍼' },
-  { id: 10, name: '图书文娱', icon: '📚' }
+  { id: 1, name: '家用电器', icon: '' },
+  { id: 2, name: '手机数码', icon: '' },
+  { id: 3, name: '电脑办公', icon: '' },
+  { id: 4, name: '家居家具', icon: '' },
+  { id: 5, name: '服装鞋靴', icon: '' },
+  { id: 6, name: '美妆个护', icon: '' },
+  { id: 7, name: '运动户外', icon: '' },
+  { id: 8, name: '食品生鲜', icon: '' },
+  { id: 9, name: '母婴玩具', icon: '' },
+  { id: 10, name: '图书文娱', icon: '' }
 ])
 
 // 轮播图
@@ -233,7 +243,7 @@ const fetchRecommendProducts = async () => {
 const fetchAnnouncements = async () => {
   try {
     const response = await getPublishedAnnouncements()
-    console.log('📢 获取公告响应:', response)
+    console.log('获取公告响应:', response)
     // response 已经是数据数组，因为request.js的拦截器返回了res.data
     if (Array.isArray(response)) {
       announcements.value = response
@@ -241,7 +251,7 @@ const fetchAnnouncements = async () => {
       announcements.value = []
     }
   } catch (error) {
-    console.error('❌ 获取公告失败:', error)
+    console.error('获取公告失败:', error)
   }
 }
 
@@ -320,7 +330,7 @@ onMounted(() => {
 }
 
 .banner-item {
-  height: 480px;
+  height: 520px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -350,7 +360,7 @@ onMounted(() => {
   background: #fff;
   border-radius: 4px;
   padding: 20px;
-  min-height: 480px;
+  min-height: 520px;
 }
 
 .news-title {
@@ -436,27 +446,46 @@ onMounted(() => {
 }
 
 .item-img {
-  height: 200px;
+  width: 100%;
+  padding-bottom: 100%; /* 1:1 ratio for square */
+  position: relative;
   border-radius: 4px;
   margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
-  background: #f5f5f5;
+  background: #fff;
 }
 
 .item-img .el-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
 }
 
 .item-img .placeholder-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: white;
   font-weight: bold;
   font-size: 14px;
   padding: 10px;
   text-align: center;
+  width: 100%;
+}
+
+.item-name {
+  font-size: 14px;
+  color: #333;
+  height: 40px;
+  line-height: 20px;
+  margin-bottom: 8px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .item-price {
@@ -488,81 +517,80 @@ onMounted(() => {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
   padding-top: 20px;
 }
 
 .product-item {
+  text-align: center;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .product-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transform: translateY(-3px);
 }
 
 .product-img {
-  height: 220px;
+  width: 100%;
+  padding-bottom: 100%; /* 1:1 ratio for square */
+  position: relative;
   border-radius: 4px;
   margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
-  background: #f5f5f5;
+  background: #fff;
 }
 
 .product-img .el-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
 }
 
 .product-img .placeholder-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: white;
   font-weight: bold;
   font-size: 14px;
   padding: 15px;
   text-align: center;
-}
-
-.product-info {
-  padding: 10px;
+  width: 100%;
 }
 
 .product-name {
   font-size: 14px;
   color: #333;
-  margin-bottom: 5px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.product-desc {
-  font-size: 12px;
-  color: #999;
-  margin-bottom: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  height: 40px;
+  line-height: 20px;
+  margin-bottom: 8px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-price {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .product-price .price {
-  font-size: 18px;
+  font-size: 20px;
   color: #e4393c;
   font-weight: bold;
 }
 
-.sales {
+.product-price .sales {
   font-size: 12px;
   color: #999;
 }

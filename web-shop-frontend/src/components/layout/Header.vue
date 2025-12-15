@@ -3,7 +3,6 @@
     <div class="header-container">
       <!-- Logo -->
       <div class="logo">
-        <span class="logo-icon">🛒</span>
         <span class="logo-text">Web-Shop</span>
       </div>
 
@@ -65,7 +64,7 @@ import { useUserStore } from '@/stores/userStore'
 import { useCartStore } from '@/stores/cartStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
-console.log('📌 Header组件加载')
+console.log('Header组件加载')
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -160,10 +159,6 @@ onMounted(async () => {
   color: white;
   font-weight: bold;
   white-space: nowrap;
-}
-
-.logo-icon {
-  font-size: 32px;
 }
 
 .logo-text {

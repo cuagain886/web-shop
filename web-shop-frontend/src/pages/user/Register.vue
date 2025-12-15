@@ -113,7 +113,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/userStore'
 
-console.log('📝 注册页面加载')
+console.log('注册页面加载')
 
 const router = useRouter()
 const route = useRoute()
@@ -201,7 +201,7 @@ const handleRegister = async () => {
     await registerFormRef.value.validate()
 
     loading.value = true
-    console.log('📝 开始注册...', registerForm.username)
+    console.log('开始注册...', registerForm.username)
 
     // 调用注册接口
     await userStore.register({
@@ -212,7 +212,7 @@ const handleRegister = async () => {
     })
 
     ElMessage.success('注册成功！即将跳转到登录页...')
-    console.log('✅ 注册成功')
+    console.log('注册成功')
 
     // 延迟跳转到登录页
     setTimeout(() => {
@@ -220,7 +220,7 @@ const handleRegister = async () => {
     }, 1500)
 
   } catch (error) {
-    console.error('❌ 注册失败:', error)
+    console.error('注册失败:', error)
     console.error('错误详情:', JSON.stringify(error, null, 2))
     
     // 提取错误信息
@@ -250,7 +250,7 @@ const goToLogin = () => {
 <style scoped>
 .register-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: #f0f0f0;
   display: flex;
   align-items: center;
   justify-content: center;

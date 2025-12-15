@@ -1,0 +1,63 @@
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: webshop-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: webshop
+      MYSQL_USER: webshop
+      MYSQL_PASSWORD: webshop123
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./web-shop-backend/src/main/resources:/docker-entrypoint-initdb.d:ro
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - webshop-network
+
+  # 后端服务
+  backend:
+    build:
+      context: ./web-shop-backend
+      dockerfile: Dockerfile
+    container_name: webshop-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/webshop?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: webshop
+      SPRING_DATASOURCE_PASSWORD: webshop123
+      TZ: Asia/Shanghai
+    depends_on:
+      - mysql
+    volumes:
+      - backend-uploads:/app/uploads
+    networks:
+      - webshop-network
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./web-shop-frontend
+      dockerfile: Dockerfile
+    container_name: webshop-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - webshop-network
+
+volumes:
+  mysql-data:
+  backend-uploads:
+
+networks:
+  webshop-network:
+    driver: bridge

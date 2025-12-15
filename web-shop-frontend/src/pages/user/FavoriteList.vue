@@ -57,9 +57,9 @@ const loadFavoriteList = async () => {
   try {
     const data = await fetchFavoriteList(userStore.userInfo?.id)
     favoriteList.value = data || []
-    console.log('✅ 收藏列表加载成功:', favoriteList.value)
+    console.log('收藏列表加载成功:', favoriteList.value)
   } catch (error) {
-    console.error('❌ 加载收藏列表失败:', error)
+    console.error('加载收藏列表失败:', error)
     ElMessage.error('加载收藏列表失败')
   }
 }
@@ -76,7 +76,7 @@ const loadFavorites = async () => {
     
     await loadFavoriteList()
   } catch (error) {
-    console.error('❌ 加载收藏列表失败:', error)
+    console.error('加载收藏列表失败:', error)
     ElMessage.error('加载收藏列表失败')
   } finally {
     loading.value = false
@@ -95,10 +95,10 @@ const handleRemove = async (productId) => {
     // 从列表中移除
     favoriteList.value = favoriteList.value.filter(item => item.productId !== productId)
     ElMessage.success('已取消收藏')
-    console.log('✅ 取消收藏成功')
+    console.log('取消收藏成功')
   } catch (error) {
     if (error.message !== 'Request canceled.') {
-      console.error('❌ 取消收藏失败:', error)
+      console.error('取消收藏失败:', error)
       ElMessage.error('取消收藏失败')
     }
   }
@@ -121,10 +121,10 @@ const handleClearAll = async () => {
     
     favoriteList.value = []
     ElMessage.success('已清空收藏')
-    console.log('✅ 清空收藏成功')
+    console.log('清空收藏成功')
   } catch (error) {
     if (error.message !== 'Request canceled.') {
-      console.error('❌ 清空收藏失败:', error)
+      console.error('清空收藏失败:', error)
       ElMessage.error('清空收藏失败')
     }
   }

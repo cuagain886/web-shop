@@ -49,9 +49,9 @@
         ORDER BY pr.created_time DESC
     </select>
 
-    <!-- 查询用户的评价列表 -->
+    <!-- 查询用户的评价列表（带商品信息） -->
     <select id="selectByUserId" resultType="org.javaweb.webshopbackend.pojo.entity.ProductReview">
-        SELECT 
+        SELECT
             pr.id,
             pr.product_id AS productId,
             pr.user_id AS userId,
@@ -61,10 +61,13 @@
             pr.images,
             pr.reply,
             pr.reply_time AS replyTime,
-            pr.created_time AS createdTime
+            pr.created_time AS createdTime,
+            p.name AS productName,
+            p.cover_image AS productImage
         FROM product_review pr
         INNER JOIN user u ON pr.user_id = u.id AND u.deleted = 0
-        WHERE pr.deleted = 0 
+        LEFT JOIN product p ON pr.product_id = p.id
+        WHERE pr.deleted = 0
           AND pr.user_id = #{userId}
         ORDER BY pr.created_time DESC
     </select>

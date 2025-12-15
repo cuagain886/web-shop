@@ -6,15 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.javaweb.webshopbackend.mapper.UserMapper;
 import org.javaweb.webshopbackend.pojo.entity.User;
 import org.javaweb.webshopbackend.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.DigestUtils;
-
-import java.nio.charset.StandardCharsets;
 
 /**
  * 用户 Service 实现类
- * 
+ *
  * @author WebShop Team
  * @date 2025-11-03
  */
@@ -22,13 +21,8 @@ import java.nio.charset.StandardCharsets;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
-    /**
-     * 密码加密（使用MD5，实际项目建议使用BCrypt）
-     */
-    private String encryptPassword(String password) {
-        // 简单示例，实际项目应使用 BCryptPasswordEncoder
-        return DigestUtils.md5DigestAsHex(password.getBytes(StandardCharsets.UTF_8));
-    }
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -45,12 +39,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new IllegalArgumentException("手机号已被使用");
         }
 
-        // 加密密码
-        user.setPassword(encryptPassword(password));
+        // 使用BCrypt加密密码
+        user.setPassword(passwordEncoder.encode(password));
 
         // 设置默认值（仅当未提供时）
         if (user.getNickname() == null || user.getNickname().isEmpty()) {
-            user.setNickname(user.getUsername());  // 默认昵称为用户名
+            user.setNickname(user.getUsername());// 默认昵称为用户名
         }
         if (user.getRole() == null || user.getRole().isEmpty()) {
             user.setRole("user");  // 默认角色为普通用户
@@ -90,8 +84,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new IllegalArgumentException("账号已被禁用");
         }
 
-        // 验证密码
-        if (!user.getPassword().equals(encryptPassword(password))) {
+        // 使用BCrypt验证密码
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new IllegalArgumentException("用户名或密码错误");
         }
 
@@ -144,13 +138,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new IllegalArgumentException("用户不存在");
         }
 
-        // 验证旧密码
-        if (!user.getPassword().equals(encryptPassword(oldPassword))) {
+        // 使用BCrypt验证旧密码
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new IllegalArgumentException("原密码错误");
         }
 
-        // 更新密码
-        user.setPassword(encryptPassword(newPassword));
+        // 使用BCrypt加密新密码
+        user.setPassword(passwordEncoder.encode(newPassword));
         this.updateById(user);
 
         log.info("密码修改成功：userId={}", userId);
@@ -214,4 +208,3 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         log.info("账户注销成功：userId={}", userId);
     }
 }
-

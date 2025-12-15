@@ -123,16 +123,13 @@
             @click="goToDetail(product.id)"
           >
             <div class="product-image" :style="{ background: product.color }">
-              <el-image v-if="product.image" :src="product.image" fit="cover" />
+              <el-image v-if="product.image" :src="product.image" fit="cover" style="width: 100%; height: 100%; object-fit: cover;" />
               <div v-else class="placeholder-text">{{ product.name }}</div>
             </div>
-            <div class="product-info">
-              <div class="product-name" :title="product.name">{{ product.name }}</div>
-              <div class="product-desc">{{ product.desc || product.description }}</div>
-              <div class="product-footer">
-                <span class="product-price">¥{{ product.price }}</span>
-                <span class="product-sales">{{ product.sales || 0 }}人付款</span>
-              </div>
+            <div class="product-name" :title="product.name">{{ product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name }}</div>
+            <div class="product-footer">
+              <span class="product-price">¥{{ product.price }}</span>
+              <span class="product-sales">{{ product.sales || 0 }}人付款</span>
             </div>
           </div>
         </div>
@@ -320,9 +317,9 @@ const loadProducts = async () => {
         categoryName: categories.value.find(c => c.id === p.categoryId)?.name || ''
       }
     })
-    console.log('✅ 商品列表加载成功:', allProducts.value.length)
+    console.log('商品列表加载成功:', allProducts.value.length)
   } catch (error) {
-    console.error('❌ 加载商品列表失败:', error)
+    console.error('加载商品列表失败:', error)
     ElMessage.error('加载商品列表失败')
   } finally {
     loading.value = false
@@ -511,80 +508,76 @@ onMounted(() => {
 /* 网格视图 */
 .grid-view {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
 }
 
 .product-card {
-  border: 1px solid #e4e7ed;
-  border-radius: 4px;
-  overflow: hidden;
+  text-align: center;
   cursor: pointer;
   transition: all 0.3s;
   background: white;
 }
 
 .product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: #409eff;
+  transform: translateY(-3px);
 }
 
 .product-image {
   width: 100%;
-  height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding-bottom: 100%; /* 1:1 ratio for square */
+  position: relative;
+  border-radius: 4px;
+  margin-bottom: 10px;
   overflow: hidden;
   background: #f5f5f5;
 }
 
 .product-image .el-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
 }
 
 .placeholder-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: white;
   font-size: 14px;
   font-weight: bold;
   padding: 20px;
   text-align: center;
-}
-
-.product-info {
-  padding: 15px;
+  width: 100%;
 }
 
 .product-name {
   font-size: 14px;
-  color: #303133;
+  color: #333;
+  height: 40px;
+  line-height: 20px;
   margin-bottom: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-.product-desc {
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 12px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .product-price {
   font-size: 20px;
-  color: #f56c6c;
+  color: #e4393c;
   font-weight: bold;
 }
 
@@ -700,7 +693,7 @@ onMounted(() => {
   }
 
   .grid-view {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

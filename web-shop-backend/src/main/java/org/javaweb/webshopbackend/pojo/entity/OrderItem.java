@@ -1,6 +1,7 @@
 package org.javaweb.webshopbackend.pojo.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -10,7 +11,7 @@ import java.math.BigDecimal;
 
 /**
  * 订单项实体类
- * 
+ *
  * @author WebShop Team
  * @date 2025-11-03
  */
@@ -30,6 +31,12 @@ public class OrderItem implements Serializable {
      * 关联订单ID
      */
     private Long orderId;
+
+    /**
+     * 订单号（非数据库字段，用于关联查询）
+     */
+    @TableField(exist = false)
+    private String orderNo;
 
     /**
      * 关联商品ID

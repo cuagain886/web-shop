@@ -112,7 +112,7 @@ const handleLogin = async () => {
     loading.value = true
     
     // 调试：打印请求数据
-    console.log('🔍 登录请求数据:', {
+    console.log('登录请求数据:', {
       username: loginForm.username,
       password: loginForm.password
     })
@@ -123,7 +123,7 @@ const handleLogin = async () => {
       password: loginForm.password
     })
     
-    console.log('✅ 登录响应:', { token, userInfo })
+    console.log('登录响应:', { token, userInfo })
     
     // 检查是否为管理员账号（role可能是字符串或数字）
     const role = String(userInfo.role).toLowerCase()
@@ -167,7 +167,7 @@ const goToUserSite = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f0f0f0;
   padding: 20px;
 }
 

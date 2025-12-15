@@ -70,7 +70,7 @@ const loadHistory = async () => {
       image: item.product?.coverImage || '',
       browsedAt: item.createdAt
     }))
-    console.log('✅ 浏览历史加载成功:', historyList.value.length)
+    console.log('浏览历史加载成功:', historyList.value.length)
   } catch (error) {
     console.error('加载浏览历史失败:', error)
   }

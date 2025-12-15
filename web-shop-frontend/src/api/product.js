@@ -71,9 +71,9 @@ export function getFlashSaleProducts(params) {
 /**
  * 获取商品评价列表
  */
-export function getProductReviews(id, params) {
+export function getProductReviews(productId, params) {
   return request({
-    url: `/api/product/${id}/reviews`,
+    url: `/api/review/product/${productId}`,
     method: 'get',
     params
   })
@@ -82,11 +82,42 @@ export function getProductReviews(id, params) {
 /**
  * 添加商品评价
  */
-export function addProductReview(id, data) {
+export function addProductReview(data) {
   return request({
-    url: `/api/product/${id}/review`,
+    url: '/api/review',
     method: 'post',
     data
+  })
+}
+
+/**
+ * 检查用户是否购买过商品（可评价）
+ */
+export function checkPurchased(productId, userId) {
+  return request({
+    url: `/api/review/check-purchased/${productId}`,
+    method: 'get',
+    params: { userId }
+  })
+}
+
+/**
+ * 获取用户待评价的订单项
+ */
+export function getPendingReviews(userId) {
+  return request({
+    url: `/api/review/pending/${userId}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 获取用户已评价的订单项
+ */
+export function getReviewedItems(userId) {
+  return request({
+    url: `/api/review/reviewed/${userId}`,
+    method: 'get'
   })
 }
 

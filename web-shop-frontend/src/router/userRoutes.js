@@ -62,5 +62,11 @@ export default [
     name: 'Register',
     component: () => import('@/pages/user/Register.vue'),
     meta: { title: '用户注册' }
+  },
+  {
+    path: '/announcement/:id',
+    name: 'AnnouncementDetail',
+    component: () => import('@/pages/announcement/AnnouncementDetail.vue'),
+    meta: { title: '公告详情' }
   }
 ]

@@ -231,14 +231,14 @@ const totalAmount = computed(() => {
     const itemQuantity = parseInt(item.quantity) || 1
     return sum + (itemPrice * itemQuantity)
   }, 0)
-  console.log('💰 计算商品总金额:', { items: orderItems.value, totalAmount: amount })
+  console.log('计算商品总金额:', { items: orderItems.value, totalAmount: amount })
   return amount
 })
 
 // 应付总额（商品总价 + 运费）
 const payAmount = computed(() => {
   const total = totalAmount.value + (parseFloat(freight.value) || 0)
-  console.log('💰 计算应付总额:', { totalAmount: totalAmount.value, freight: freight.value, payAmount: total })
+  console.log('计算应付总额:', { totalAmount: totalAmount.value, freight: freight.value, payAmount: total })
   return total
 })
 
@@ -447,7 +447,7 @@ onMounted(async () => {
         price: parseFloat(item.price) || 0,
         quantity: parseInt(item.quantity) || 1
       }]
-      console.log('📦 立即购买商品信息:', orderItems.value)
+      console.log('立即购买商品信息:', orderItems.value)
       // 清除sessionStorage
       sessionStorage.removeItem('buyNowItem')
     } catch (error) {
@@ -469,7 +469,7 @@ onMounted(async () => {
       price: parseFloat(item.price) || 0,
       quantity: parseInt(item.quantity) || 1
     }))
-    console.log('📦 购物车结算商品信息:', orderItems.value)
+    console.log('购物车结算商品信息:', orderItems.value)
   }
 
   // 获取地址列表
@@ -479,7 +479,7 @@ onMounted(async () => {
   try {
     const settings = await getSettings()
     freight.value = parseFloat(settings.defaultShipping) || 0
-    console.log('📦 系统运费:', freight.value)
+    console.log('系统运费:', freight.value)
   } catch (error) {
     console.error('获取系统设置失败:', error)
   }

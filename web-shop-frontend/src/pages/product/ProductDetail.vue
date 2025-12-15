@@ -175,6 +175,73 @@
     <div class="product-detail-content">
       <div class="container">
         <el-tabs v-model="activeTab" class="detail-tabs">
+          <el-tab-pane label="商品评价" name="reviews">
+            <div class="reviews-section">
+              <!-- 评价表单 - 仅购买过商品的用户可见 -->
+              <div v-if="canReview" class="review-form-section">
+                <h4>发表评价</h4>
+                <el-form :model="reviewForm" label-width="80px">
+                  <el-form-item label="评分">
+                    <el-rate v-model="reviewForm.rating" show-text :texts="['很差', '较差', '一般', '满意', '非常满意']" />
+                  </el-form-item>
+                  <el-form-item label="评价内容">
+                    <el-input
+                      v-model="reviewForm.content"
+                      type="textarea"
+                      :rows="4"
+                      placeholder="请分享您的使用体验..."
+                      maxlength="500"
+                      show-word-limit
+                    />
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="primary" @click="handleSubmitReview" :loading="submittingReview">
+                      提交评价
+                    </el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
+              <div v-else-if="userStore.userInfo?.id && !canReview" class="review-tip">
+                <el-alert
+                  title="购买并确认收货后才能评价该商品"
+                  type="info"
+                  :closable="false"
+                  show-icon
+                />
+              </div>
+              <div v-else class="review-tip">
+                <el-alert
+                  title="请登录后查看是否可以评价"
+                  type="info"
+                  :closable="false"
+                  show-icon
+                />
+              </div>
+
+              <!-- 评价列表 -->
+              <div class="reviews-list">
+                <h4>全部评价 ({{ reviews.length }})</h4>
+                <div v-if="reviews.length === 0" class="empty-reviews">
+                  <el-empty description="暂无评价" />
+                </div>
+                <div v-else>
+                  <div v-for="review in reviews" :key="review.id" class="review-item">
+                    <div class="review-header">
+                      <span class="review-user">{{ review.user?.nickname || review.user?.username || '匿名用户' }}</span>
+                      <el-rate v-model="review.rating" disabled size="small" />
+                      <span class="review-time">{{ formatTime(review.createdTime) }}</span>
+                    </div>
+                    <div class="review-content">{{ review.content }}</div>
+                    <div v-if="review.reply" class="review-reply">
+                      <span class="reply-label">商家回复：</span>
+                      <span>{{ review.reply }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+
           <el-tab-pane label="商品详情" name="detail">
             <div class="detail-section">
               <h3>商品介绍</h3>
@@ -221,16 +288,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { ShoppingCart, Select, Van, RefreshRight, Star } from '@element-plus/icons-vue'
-import { getProductDetail, addFavorite, removeFavorite, checkFavorite } from '@/api/product'
+import { getProductDetail, addFavorite, removeFavorite, checkFavorite, getProductReviews, checkPurchased, addProductReview } from '@/api/product'
 import { recordBrowsing } from '@/api/history'
 import { useCartStore } from '@/stores/cartStore'
 import { useUserStore } from '@/stores/userStore'
 
-console.log('📦 商品详情页加载')
+console.log('商品详情页加载')
 
 const route = useRoute()
 const router = useRouter()
@@ -280,6 +347,20 @@ const activeTab = ref('detail')
 
 // 收藏状态
 const isFavorited = ref(false)
+
+// 评价列表
+const reviews = ref([])
+
+// 是否可以评价
+const canReview = ref(false)
+const orderItemId = ref(null)
+const submittingReview = ref(false)
+
+// 评价表单
+const reviewForm = reactive({
+  rating: 5,
+  content: ''
+})
 
 // 当前库存
 const currentStock = computed(() => {
@@ -368,7 +449,7 @@ const selectSpec = (specName, value, option) => {
 
 // 根据规格查找对应的SKU
 const findSkuBySpecs = (specs) => {
-  console.log('🔍 根据规格查找SKU:', specs)
+  console.log('根据规格查找SKU:', specs)
   
   // 遍历所有SKU，找到attributes匹配的SKU
   const skus = product.value.skus || []
@@ -386,12 +467,12 @@ const findSkuBySpecs = (specs) => {
     }
     
     if (allMatch) {
-      console.log(`✅ SKU ${sku.id}的所有规格都匹配`)
+      console.log(`SKU ${sku.id}的所有规格都匹配`)
       return sku
     }
   }
   
-  console.log('❌ 未找到匹配的SKU')
+  console.log('未找到匹配的SKU')
   return null
 }
 
@@ -421,12 +502,12 @@ const handleAddToCart = async () => {
      })
 
      ElMessage.success('已加入购物车')
-     console.log('✅ 加入购物车成功')
+     console.log('加入购物车成功')
 
      // 更新购物车数量显示
      await cartStore.updateCartCount()
    } catch (error) {
-     console.error('❌ 加入购物车失败:', error)
+     console.error('加入购物车失败:', error)
      ElMessage.error('加入购物车失败')
    }
 }
@@ -469,8 +550,8 @@ const loadProductDetail = async () => {
 
   try {
     const data = await getProductDetail(productId)
-    console.log('📦 后端返回的完整数据:', data)
-    console.log('📦 SKU数据:', data.skus)
+    console.log('后端返回的完整数据:', data)
+    console.log('SKU数据:', data.skus)
     
     // 解析images字段
     let images = []
@@ -496,7 +577,7 @@ const loadProductDetail = async () => {
     
     // 如果有SKU数据，将SKU信息关联到对应的规格选项
     if (data.skus && data.skus.length > 0) {
-      console.log('🔍 开始处理SKU数据，共', data.skus.length, '个SKU')
+      console.log('开始处理SKU数据，共', data.skus.length, '个SKU')
       data.skus.forEach((sku, skuIndex) => {
         console.log(`SKU ${skuIndex}:`, sku)
         // 解析SKU的attributes
@@ -553,7 +634,7 @@ const loadProductDetail = async () => {
     if (userId) {
       try {
         await recordBrowsing(userId, productId)
-        console.log('✅ 浏览历史已记录')
+        console.log('浏览历史已记录')
       } catch (error) {
         console.error('记录浏览历史失败:', error)
       }
@@ -577,7 +658,7 @@ const checkFavoriteStatus = async () => {
   try {
     const result = await checkFavorite(productId)
     isFavorited.value = result.isFavorited || false
-    console.log('✅ 收藏状态检查完成:', isFavorited.value)
+    console.log('收藏状态检查完成:', isFavorited.value)
   } catch (error) {
     console.error('检查收藏状态失败:', error)
   }
@@ -597,7 +678,7 @@ const handleAddFavorite = async () => {
     await addFavorite(product.value.id)
     isFavorited.value = true
     ElMessage.success('已添加到收藏')
-    console.log('✅ 添加收藏成功')
+    console.log('添加收藏成功')
   } catch (error) {
     console.error('添加收藏失败:', error)
     ElMessage.error('添加收藏失败')
@@ -618,7 +699,7 @@ const handleRemoveFavorite = async () => {
     await removeFavorite(product.value.id)
     isFavorited.value = false
     ElMessage.success('已取消收藏')
-    console.log('✅ 取消收藏成功')
+    console.log('取消收藏成功')
   } catch (error) {
     console.error('取消收藏失败:', error)
     ElMessage.error('取消收藏失败')
@@ -634,9 +715,95 @@ const handleToggleFavorite = async () => {
   }
 }
 
+// 加载商品评价
+const loadReviews = async () => {
+  const productId = route.params.id
+  try {
+    const data = await getProductReviews(productId, { pageNum: 1, pageSize: 10 })
+    reviews.value = data.records || data || []
+  } catch (error) {
+    console.error('加载评价失败:', error)
+  }
+}
+
+// 检查用户是否可以评价
+const checkCanReview = async () => {
+  const productId = route.params.id
+  const userId = userStore.userInfo?.id
+  
+  if (!userId) {
+    canReview.value = false
+    return
+  }
+
+  try {
+    const result = await checkPurchased(productId, userId)
+    canReview.value = result.hasPurchased || false
+    orderItemId.value = result.orderItemId || null
+    console.log('检查评价权限:', result)
+  } catch (error) {
+    console.error('检查评价权限失败:', error)
+    canReview.value = false
+  }
+}
+
+// 提交评价
+const handleSubmitReview = async () => {
+  if (!reviewForm.content || reviewForm.content.trim() === '') {
+    ElMessage.warning('请输入评价内容')
+    return
+  }
+
+  if (!orderItemId.value) {
+    ElMessage.error('无法获取订单信息，请刷新页面重试')
+    return
+  }
+
+  submittingReview.value = true
+  try {
+    await addProductReview({
+      userId: userStore.userInfo.id,
+      productId: product.value.id,
+      orderItemId: orderItemId.value,
+      rating: reviewForm.rating,
+      content: reviewForm.content.trim()
+    })
+    
+    ElMessage.success('评价提交成功')
+    
+    // 重置表单
+    reviewForm.rating = 5
+    reviewForm.content = ''
+    
+    // 刷新评价列表和评价权限
+    await loadReviews()
+    await checkCanReview()
+  } catch (error) {
+    console.error('提交评价失败:', error)
+    ElMessage.error(error.message || '提交评价失败')
+  } finally {
+    submittingReview.value = false
+  }
+}
+
+// 格式化时间
+const formatTime = (time) => {
+  if (!time) return ''
+  const date = new Date(time)
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
 onMounted(() => {
   loadProductDetail()
   checkFavoriteStatus()
+  loadReviews()
+  checkCanReview()
 })
 </script>
 
@@ -1020,6 +1187,94 @@ onMounted(() => {
   color: #67c23a;
   margin-right: 8px;
   font-weight: bold;
+}
+
+/* 评价区域 */
+.reviews-section {
+  padding: 20px 0;
+}
+
+/* 评价表单 */
+.review-form-section {
+  max-width: 800px;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.review-form-section h4 {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.review-tip {
+  max-width: 800px;
+  margin-bottom: 30px;
+}
+
+.reviews-list {
+  max-width: 800px;
+}
+
+.reviews-list h4 {
+  margin: 0 0 20px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.empty-reviews {
+  padding: 40px 0;
+}
+
+.review-item {
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.review-user {
+  font-weight: 500;
+  color: #333;
+}
+
+.review-time {
+  font-size: 12px;
+  color: #999;
+  margin-left: auto;
+}
+
+.review-content {
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.review-reply {
+  background: #f7f7f7;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+}
+
+.reply-label {
+  color: #e4393c;
+  font-weight: 500;
+  margin-right: 5px;
 }
 
 /* 响应式 */

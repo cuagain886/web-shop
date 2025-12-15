@@ -13,10 +13,10 @@ import { onMounted } from 'vue'
 import Header from '@/components/layout/Header.vue'
 import Footer from '@/components/layout/Footer.vue'
 
-console.log('🎯 App组件开始加载')
+console.log('App组件开始加载')
 
 onMounted(() => {
-  console.log('✅ App组件已挂载')
+  console.log('App组件已挂载')
 })
 </script>
 

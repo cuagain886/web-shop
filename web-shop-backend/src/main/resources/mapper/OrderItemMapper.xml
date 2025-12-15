@@ -34,7 +34,8 @@
             oi.quantity,
             oi.total_price,
             oi.spec_info,
-            oi.is_reviewed
+            oi.is_reviewed,
+            o.order_no AS orderNo
         FROM `order_item` oi
         INNER JOIN `orders` o ON oi.order_id = o.id
         INNER JOIN `user` u ON o.user_id = u.id AND u.deleted = 0

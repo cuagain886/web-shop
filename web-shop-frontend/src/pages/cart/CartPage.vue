@@ -141,7 +141,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCartStore } from '@/stores/cartStore'
 import { useUserStore } from '@/stores/userStore'
 
-console.log('🛒 购物车页面加载')
+console.log('购物车页面加载')
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -263,9 +263,9 @@ const goToHome = () => {
 onMounted(async () => {
   try {
     await cartStore.fetchCartList()
-    console.log('✅ 购物车数据加载完成')
+    console.log('购物车数据加载完成')
   } catch (error) {
-    console.error('❌ 加载购物车数据失败:', error)
+    console.error('加载购物车数据失败:', error)
   }
 })
 </script>
