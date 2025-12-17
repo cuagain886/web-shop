@@ -1,34 +1,32 @@
-# 使用Maven构建阶段
+# ===== Build stage =====
 FROM maven:3.9-eclipse-temurin-21 AS build
 
-# 设置工作目录
 WORKDIR /app
 
-# 复制pom.xml和源代码
+# 复制 pom 和源码
 COPY pom.xml .
 COPY src ./src
 
-# 构建应用（跳过测试以加快构建速度）
-RUN mvn clean package -DskipTests
+# 本地构建：不限制 Maven build 内存
+RUN mvn -DskipTests clean package
 
-# 运行阶段
+
+# ===== Runtime stage =====
 FROM eclipse-temurin:21-jre-jammy
 
-# 设置工作目录
 WORKDIR /app
 
-# 从构建阶段复制jar文件
-COPY --from=build /app/target/*.jar app.jar
+# 拷贝 jar
+COPY --from=build /app/target/*.jar /app/app.jar
 
-# 创建uploads目录
+# 创建 uploads 目录
 RUN mkdir -p /app/uploads
 
-# 暴露端口
 EXPOSE 8080
 
-# 设置时区
+# 时区
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 启动应用
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "app.jar"]
+# 启动应用（修正参数顺序）
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]

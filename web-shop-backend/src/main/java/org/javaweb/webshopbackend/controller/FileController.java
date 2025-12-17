@@ -76,8 +76,8 @@ public class FileController {
             Path filePath = Paths.get(uploadPath, filename);
             Files.write(filePath, file.getBytes());
 
-            // 返回访问URL（完整路径，包含协议和域名）
-            String url = "http://localhost:" + serverPort + "/uploads/image/" + filename;
+            // 返回访问URL（使用相对路径，适配Docker部署和nginx代理）
+            String url = "/uploads/image/" + filename;
             Map<String, String> result = new HashMap<>();
             result.put("url", url);
 
